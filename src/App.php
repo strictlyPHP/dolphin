@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StrictlyPHP\Dolphin;
 
 use League\Route\Router;
@@ -20,17 +22,17 @@ class App
         $this->router = $router;
     }
 
-    public function run(array $event, object $context) : array
+    public function run(array $event, object $context): array
     {
         parse_str($event['http']['headers']['cookie'] ?? '', $cookies);
         $request = new \Slim\Psr7\Request(
             $event['http']['method'],
-            (new UriFactory)->createUri(
+            (new UriFactory())->createUri(
                 sprintf(
                     '%s/%s%s',
                     $context->apiHost,
                     $event['http']['path'],
-                    !empty($event['http']['queryString']) ? '?'.$event['http']['queryString'] : ''
+                    ! empty($event['http']['queryString']) ? '?' . $event['http']['queryString'] : ''
                 )
             ),
             new Headers($event['http']['headers']),
@@ -44,7 +46,7 @@ class App
         return [
             'statusCode' => $response->getStatusCode(),
             'body' => $response->getBody()->getContents(),
-            'headers' => $response->getHeaders()
+            'headers' => $response->getHeaders(),
         ];
     }
 }

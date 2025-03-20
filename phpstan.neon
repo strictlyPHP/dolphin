@@ -2,9 +2,6 @@ includes:
 	- vendor/phpstan/phpstan-phpunit/extension.neon
 
 parameters:
-	checkMissingIterableValueType: false
-	checkGenericClassInNonGenericObjectType: false
-	excludePaths:
-		- /tests/*
 	ignoreErrors:
+	    - identifier: missingType.iterableValue
 rules:
