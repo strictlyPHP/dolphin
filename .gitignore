@@ -1,0 +1,4 @@
+/vendor/
+.idea
+diff.txt
+.phpunit.result.cache

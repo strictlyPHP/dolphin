@@ -1,0 +1,32 @@
+{
+  "name": "strictlyphp/dolphpin",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "StrictlyPHP\\Dolphin\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "StrictlyPHP\\Tests\\Dolphin\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Ken Lalobo",
+      "email": "lalobo@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "slim/psr7": "^1.7",
+    "league/route": "^6.2"
+  },
+  "require-dev": {
+    "symplify/easy-coding-standard": "^11.1",
+    "phpstan/phpstan": "^1.8",
+    "phpunit/phpunit": "^9.5",
+    "phpstan/phpstan-phpunit": "^1.1"
+  }
+}
