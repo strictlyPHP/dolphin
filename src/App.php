@@ -12,7 +12,7 @@ use Slim\Psr7\Headers;
 
 class App
 {
-    private RequestHandlerInterface $router;
+    private readonly RequestHandlerInterface $router;
 
     public function __construct(
         string $routesFile
