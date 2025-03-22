@@ -1,6 +1,9 @@
 name: Pull Request
 
 on:
+  branch:
+    - main
+    - v1-php8
   pull_request:
     branches: [ "main", "v1-php8" ]
 
