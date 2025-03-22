@@ -23,7 +23,7 @@ Create a `routes.php` file for routing configuration. Here's an example:
 ```php
 <?php
 
-use Auxeris\Service\User\Controllers\CreateUserController;
+use Service\User\Controllers\CreateUserController;
 use League\Route\Router;
 
 $router = new Router;
@@ -37,7 +37,7 @@ A controller handles the logic of the request. Example:
 ```php
 <?php
 
-namespace Auxeris\Service\User\Controllers;
+namespace Service\User\Controllers;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
