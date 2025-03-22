@@ -1,11 +1,11 @@
-name: Pull Request
+name: Test Main Branch
 
 on:
   push:
-    branches: [ "main", "v1-php8" ]
+    branches: [ "main" ]
 
 jobs:
-  test:
+  test-main:
 
     runs-on: ubuntu-latest
 
