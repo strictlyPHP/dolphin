@@ -10,9 +10,9 @@ help: ## Display this help message
 analyze: ## Runs static analysis tools
 		 docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin php ./vendor/bin/phpstan analyse -l 6 -c phpstan.neon src
 
-.PHONY: test-coverage
-test-coverage: ## Run phpunit tests with coverage
-		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp -e XDEBUG_MODE=coverage strictlyphp82/dolphin ./vendor/bin/phpunit tests/ --coverage-php=/tmp/coverage.cov --coverage-html=/tmp/coverage.html
+.PHONY: coveralls
+coveralls: ## Run phpunit tests with coverage
+		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin ./build/coveralls.sh
 
 .PHONY: check-coverage
 check-coverage: ## Check the test coverage of changed files
