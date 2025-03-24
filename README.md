@@ -1,5 +1,9 @@
 # Dolphin Framework
 
+[![Coverage Status](https://coveralls.io/repos/github/strictlyPHP/dolphin/badge.svg?branch=main)](https://coveralls.io/github/strictlyPHP/dolphin?branch=main)
+![CI Status](https://github.com/strictlyPHP/dolphin/actions/workflows/test-main.yml/badge.svg)
+![Stable](https://img.shields.io/packagist/v/strictlyphp/dolphpin)
+
 Dolphin is a lightweight PHP framework designed for running DigitalOcean functions. It has two versions:
 
 - **v1**: For PHP 8

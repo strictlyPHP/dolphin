@@ -1,8 +1,8 @@
-name: Pull Request
+name: CI v1
 
 on:
   push:
-    branches: [ "main", "v1-php8" ]
+    branches: [ "v1-php8" ]
 
 jobs:
   test:
@@ -26,4 +26,4 @@ jobs:
         run: make analyze
 
       - name: Run tests
-        run: make check-coverage
+        run: make test
