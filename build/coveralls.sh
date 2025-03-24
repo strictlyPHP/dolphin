@@ -12,4 +12,3 @@ rm -fr ~/var/cache/test/*
 rm -fr ~/var/cache/prod/*
 XDEBUG_MODE=coverage ./vendor/bin/phpunit tests/ --coverage-clover=/tmp/coverage.xml
 ./vendor/bin/php-coveralls -x /tmp/coverage.xml -o /tmp/coveralls.json
-cat /tmp/coveralls.json

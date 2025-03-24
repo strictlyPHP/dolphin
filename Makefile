@@ -12,7 +12,7 @@ analyze: ## Runs static analysis tools
 
 .PHONY: coveralls
 coveralls: ## Run phpunit tests with coverage
-		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin ./build/coveralls.sh
+		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp -e COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN} strictlyphp82/dolphin ./build/coveralls.sh
 
 .PHONY: check-coverage
 check-coverage: ## Check the test coverage of changed files
