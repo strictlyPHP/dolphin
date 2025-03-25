@@ -20,20 +20,6 @@ composer require strictlyphp/dolphin:^2.0  # For PHP 8.2
 
 ## Usage
 
-### Routes File
-
-Create a `routes.php` file for routing configuration. Here's an example:
-
-```php
-<?php
-
-use Service\User\Controllers\CreateUserController;
-use League\Route\Router;
-
-$router = new Router;
-$router->post('/users', CreateUserController::class);
-```
-
 ### Controller Example
 
 A controller handles the logic of the request. Example:
@@ -64,9 +50,15 @@ In your main application file, you will include and run the app using the `route
 ```php
 <?php
 
+use Service\User\Controllers\CreateUserController;
+use League\Route\Router;
+
 function main(array $event, object $context): array
 {
-    $app = new \StrictlyPHP\Dolphin\App(__DIR__.'/routes.php');
+    $router = new Router;
+    $router->post('/users', CreateUserController::class);
+    
+    $app = new \StrictlyPHP\Dolphin\App($router);
     return $app->run($event, $context);
 }
 ```

@@ -27,13 +27,15 @@
     "ext-curl": "*",
     "ext-mbstring": "*",
     "slim/psr7": "^1.7",
-    "league/route": "^6.2"
+    "psr/http-server-handler": "^1.0",
+    "fig/http-message-util": "^1.1"
   },
   "require-dev": {
     "symplify/easy-coding-standard": "^11.1",
     "phpstan/phpstan": "^1.8",
     "phpunit/phpunit": "^9.5",
     "phpstan/phpstan-phpunit": "^1.1",
-    "php-coveralls/php-coveralls": "^2.7"
+    "php-coveralls/php-coveralls": "^2.7",
+    "league/route": "^6.2"
   }
 }
