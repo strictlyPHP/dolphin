@@ -2,3 +2,4 @@
 .idea
 diff.txt
 .phpunit.result.cache
+composer.lock

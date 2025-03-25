@@ -22,12 +22,14 @@
   "require": {
     "php": ">=8.0",
     "slim/psr7": "^1.7",
-    "league/route": "^5.1.2"
+    "psr/http-server-handler": "^1.0",
+    "fig/http-message-util": "^1.1"
   },
   "require-dev": {
     "symplify/easy-coding-standard": "^11.1",
     "phpstan/phpstan": "^1.8",
     "phpunit/phpunit": "^9.5",
-    "phpstan/phpstan-phpunit": "^1.1"
+    "phpstan/phpstan-phpunit": "^1.1",
+    "league/route": "^5.1"
   }
 }
