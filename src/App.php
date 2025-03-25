@@ -4,28 +4,28 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin;
 
-use League\Route\Router;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Headers;
+use Slim\Psr7\Request;
 
 class App
 {
-    private RequestHandlerInterface $router;
-
     public function __construct(
-        string $routesFile
+        private RequestHandlerInterface $router
     ) {
-        $router = new Router();
-        require_once $routesFile;
-        $this->router = $router;
+    }
+
+    public function getRouter(): RequestHandlerInterface
+    {
+        return $this->router;
     }
 
     public function run(array $event, object $context): array
     {
         parse_str($event['http']['headers']['cookie'] ?? '', $cookies);
-        $request = new \Slim\Psr7\Request(
+        $request = new Request(
             $event['http']['method'],
             (new UriFactory())->createUri(
                 sprintf(

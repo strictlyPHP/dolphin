@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace StrictlyPHP\Tests\Dolphin\Integration;
 
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
 
 class AppTest extends TestCase
@@ -12,7 +13,9 @@ class AppTest extends TestCase
 
     public function setUp(): void
     {
-        $this->app = new App(__DIR__ . '/../Fixtures/routes.php');
+        /** @var callable $router */
+        $router = require __DIR__ . '/../Fixtures/routes.php';
+        $this->app = new App($router());
     }
 
     public function testItRuns(): void
@@ -87,5 +90,6 @@ class AppTest extends TestCase
             ],
         ];
         self::assertSame($expectedResponse, $response);
+        self::assertInstanceOf(RequestHandlerInterface::class, $this->app->getRouter());
     }
 }
