@@ -29,7 +29,6 @@ A controller handles the logic of the request. Example:
 
 namespace Service\User\Controllers;
 
-use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use StrictlyPHP\Dolphin\Response\JsonResponse;
