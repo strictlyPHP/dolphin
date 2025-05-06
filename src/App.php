@@ -41,12 +41,25 @@ class App
             (new StreamFactory())->createStream($event['http']['body'])
         );
 
-        $response = $this->router->handle($request);
+        try {
+            $response = $this->router->handle($request);
 
-        return [
-            'statusCode' => $response->getStatusCode(),
-            'body' => $response->getBody()->getContents(),
-            'headers' => $response->getHeaders(),
-        ];
+            return [
+                'statusCode' => $response->getStatusCode(),
+                'body' => $response->getBody()->getContents(),
+                'headers' => $response->getHeaders(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'statusCode' => 500,
+                'body' => json_encode([
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTrace(),
+                ]),
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+            ];
+        }
     }
 }

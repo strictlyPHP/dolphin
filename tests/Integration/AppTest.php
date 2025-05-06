@@ -92,4 +92,56 @@ class AppTest extends TestCase
         self::assertSame($expectedResponse, $response);
         self::assertInstanceOf(RequestHandlerInterface::class, $this->app->getRouter());
     }
+
+    public function testItHandlesNotFound(): void
+    {
+        $event = [
+            "http" => [
+                "path" => "/not-found",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $functionName;
+
+            public string $functionVersion;
+
+            public string $activationId;
+
+            public string $requestId;
+
+            public int $deadline;
+
+            public string $apiHost;
+
+            public string $apiKey;
+
+            public string $namespace;
+
+            public function __construct()
+            {
+                $this->functionName = "/fn-1f96b927-f60e-4b49-9b80-0ec6d721d62c/main/user";
+                $this->functionVersion = "0.0.3";
+                $this->activationId = "f8fc1a3e97414f22bc1a3e97416f2274";
+                $this->requestId = "9dd09c223c154f19568a4430675e4b7b";
+                $this->deadline = 1732629285984;
+                $this->apiHost = "https://faas-lon1-917a94a7.doserverless.co";
+                $this->apiKey = "";
+                $this->namespace = "fn-1f96b927-f60e-4b49-9b80-0ec6d721d62c";
+            }
+
+            public function getRemainingTimeInMillis(): int
+            {
+                return 1000;
+            }
+        };
+        $response = $this->app->run($event, $context);
+
+        self::assertSame(500, $response['statusCode']);
+        self::assertSame('Not Found', json_decode($response['body'], true)['error']);
+    }
 }
