@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace StrictlyPHP\Dolphin;
 
 use DI\Container;
+use DI\ContainerBuilder;
 use HaydenPierce\ClassFinder\ClassFinder;
 use League\Route\Router;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
@@ -22,9 +27,9 @@ use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 class App
 {
     public function __construct(
-        private readonly RequestHandlerInterface $router
-    ) {
-    }
+        private readonly RequestHandlerInterface $router,
+        private readonly ?LoggerInterface $logger = null
+    ) {}
 
     /**
      * @param string[] $controllers
@@ -35,7 +40,18 @@ class App
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
         }
-        $container = new Container();
+        $container = (new ContainerBuilder())
+            ->useAttributes(true)
+            ->build();
+
+        $logger = new Logger('dolphin');
+        // Log INFO and above to stdout
+        $logger->pushHandler(new StreamHandler('php://stdout', Level::Info));
+
+        // Log WARNING and above to stderr
+        $logger->pushHandler(new StreamHandler('php://stderr', Level::Warning));
+
+        $container->set(LoggerInterface::class, new Logger('dolphin_logger'));
 
         $strategy = new DolphinAppStrategy(
             new DtoMapper(),
@@ -76,7 +92,7 @@ class App
             }
         }
 
-        return new self($router);
+        return new self($router, $logger);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -112,6 +128,11 @@ class App
                 'headers' => $response->getHeaders(),
             ];
         } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->error($e->getMessage(), [
+                    'trace' => $e->getTrace(),
+                ]);
+            }
             return [
                 'statusCode' => 500,
                 'body' => json_encode([
