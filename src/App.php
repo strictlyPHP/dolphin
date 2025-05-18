@@ -4,17 +4,96 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin;
 
+use DI\ContainerBuilder;
+use HaydenPierce\ClassFinder\ClassFinder;
+use League\Route\Router;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
+use ReflectionClass;
+use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request;
+use StrictlyPHP\Dolphin\Attributes\Route;
+use StrictlyPHP\Dolphin\Request\Method;
+use StrictlyPHP\Dolphin\Strategy\DolphinAppStrategy;
+use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 
 class App
 {
     public function __construct(
-        private readonly RequestHandlerInterface $router
+        private readonly RequestHandlerInterface $router,
+        private readonly ?LoggerInterface $logger = null
     ) {
+    }
+
+    /**
+     * @param string[] $controllers
+     */
+    public static function build(
+        array $controllers,
+    ): self {
+        if (empty($controllers)) {
+            throw new \InvalidArgumentException('No controllers provided');
+        }
+        $container = (new ContainerBuilder())
+            ->useAttributes(true)
+            ->build();
+
+        $logger = new Logger('dolphin');
+        // Log INFO and above to stdout
+        $logger->pushHandler(new StreamHandler('php://stdout', Level::Info));
+
+        // Log WARNING and above to stderr
+        $logger->pushHandler(new StreamHandler('php://stderr', Level::Warning));
+
+        $container->set(LoggerInterface::class, new Logger('dolphin_logger'));
+
+        $strategy = new DolphinAppStrategy(
+            new DtoMapper(),
+            new ResponseFactory(),
+            $logger
+        );
+        $strategy->setContainer($container);
+        $router = new Router();
+        $router->setStrategy($strategy);
+
+        $classes = [];
+        ClassFinder::disablePSR4Vendors();
+        foreach ($controllers as $controller) {
+            if (class_exists($controller)) {
+                $classes[] = $controller;
+            } else {
+                $classes = array_merge(
+                    $classes,
+                    ClassFinder::getClassesInNamespace($controller, ClassFinder::RECURSIVE_MODE)
+                );
+            }
+        }
+
+        if (empty($classes)) {
+            throw new \InvalidArgumentException('No classes found');
+        }
+
+        foreach ($classes as $class) {
+            $reflection = new ReflectionClass($class);
+            $attributes = $reflection->getAttributes(Route::class);
+            foreach ($attributes as $attribute) {
+                /** @var Method $requestMethod */
+                $requestMethod = $attribute->getArguments()[0];
+
+                /** @var string $requestPath */
+                $requestPath = $attribute->getArguments()[1];
+
+                $router->map($requestMethod->value, $requestPath, $class);
+            }
+        }
+
+        return new self($router, $logger);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -46,10 +125,15 @@ class App
 
             return [
                 'statusCode' => $response->getStatusCode(),
-                'body' => $response->getBody()->getContents(),
+                'body' => (string) $response->getBody(),
                 'headers' => $response->getHeaders(),
             ];
         } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->error($e->getMessage(), [
+                    'trace' => $e->getTrace(),
+                ]);
+            }
             return [
                 'statusCode' => 500,
                 'body' => json_encode([
