@@ -2,6 +2,7 @@ includes:
 	- vendor/phpstan/phpstan-phpunit/extension.neon
 
 parameters:
+	phpVersion: 80000
 	ignoreErrors:
 	    - identifier: missingType.iterableValue
 rules:
