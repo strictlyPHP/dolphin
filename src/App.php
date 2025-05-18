@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace StrictlyPHP\Dolphin;
 
 use DI\Container;
+use DI\ContainerBuilder;
 use HaydenPierce\ClassFinder\ClassFinder;
 use League\Route\Router;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
@@ -21,7 +26,8 @@ use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 class App
 {
     public function __construct(
-        private RequestHandlerInterface $router
+        private RequestHandlerInterface $router,
+        private ?LoggerInterface $logger = null
     ) {
     }
 
@@ -34,11 +40,23 @@ class App
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
         }
-        $container = new Container();
+        $container = (new ContainerBuilder())
+            ->useAttributes(true)
+            ->build();
+
+        $logger = new Logger('dolphin');
+        // Log INFO and above to stdout
+        $logger->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
+
+        // Log WARNING and above to stderr
+        $logger->pushHandler(new StreamHandler('php://stderr', Logger::WARNING));
+
+        $container->set(LoggerInterface::class, new Logger('dolphin_logger'));
 
         $strategy = new DolphinAppStrategy(
             new DtoMapper(),
-            new ResponseFactory()
+            new ResponseFactory(),
+            $logger
         );
         $strategy->setContainer($container);
         $router = new Router();
@@ -75,7 +93,7 @@ class App
             }
         }
 
-        return new self($router);
+        return new self($router, $logger);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -85,6 +103,7 @@ class App
 
     public function run(array $event, object $context): array
     {
+
         parse_str($event['http']['headers']['cookie'] ?? '', $cookies);
         $request = new Request(
             $event['http']['method'],
@@ -107,10 +126,15 @@ class App
 
             return [
                 'statusCode' => $response->getStatusCode(),
-                'body' => $response->getBody()->getContents(),
+                'body' => (string)$response->getBody(),
                 'headers' => $response->getHeaders(),
             ];
         } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->error($e->getMessage(), [
+                    'trace' => $e->getTrace(),
+                ]);
+            }
             return [
                 'statusCode' => 500,
                 'body' => json_encode([

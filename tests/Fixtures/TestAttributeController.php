@@ -19,9 +19,9 @@ class TestAttributeController
     public function __invoke(TestRequestDto $request): ResponseInterface
     {
         $response = $this->testService->run(
-            $request->username,
-            $request->email,
-            $request->name
+            $request->getUsername(),
+            $request->getEmail(),
+            $request->getName()
         );
         return new JsonResponse([
             'response' => $response,
