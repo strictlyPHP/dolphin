@@ -20,7 +20,7 @@ check-coverage: ## Check the test coverage of changed files
 
 .PHONY: install
 install: ## Install dependencies
-		docker build -t strictlyphp80/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp80-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp80/dolphin composer require --dev "phpunit/phpcov":"^8.0.0"
+		docker build -t strictlyphp80/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp80-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp80/dolphin composer install
 
 .PHONY: style
 style: ## Check coding style

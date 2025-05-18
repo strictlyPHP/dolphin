@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace StrictlyPHP\Tests\Dolphin\Fixtures;
 
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use StrictlyPHP\Dolphin\Attributes\Route;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Response\JsonResponse;
@@ -17,11 +16,15 @@ class TestAttributeController
     ) {
     }
 
-    public function __invoke(ServerRequestInterface $request): ResponseInterface
+    public function __invoke(TestRequestDto $request): ResponseInterface
     {
-        $response = $this->testService->run($request->getBody()->getContents());
+        $response = $this->testService->run(
+            $request->username,
+            $request->email,
+            $request->name
+        );
         return new JsonResponse([
-            'user' => $response,
+            'response' => $response,
         ]);
     }
 }
