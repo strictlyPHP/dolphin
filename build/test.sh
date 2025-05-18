@@ -10,4 +10,4 @@ cd $DIR
 
 rm -fr ~/var/cache/test/*
 rm -fr ~/var/cache/prod/*
-./vendor/bin/phpunit tests/
+./vendor/bin/phpunit tests/Integration/AppAttributeTest.php

@@ -24,13 +24,17 @@
     "slim/psr7": "^1.7",
     "psr/http-server-handler": "^1.0",
     "fig/http-message-util": "^1.1",
-    "myclabs/php-enum": "^1.8"
+    "myclabs/php-enum": "^1.8",
+    "league/route": "^5.1",
+    "haydenpierce/class-finder": "^0.5.3",
+    "php-di/php-di": "^7.0",
+    "monolog/monolog": "^2.10"
   },
   "require-dev": {
     "symplify/easy-coding-standard": "^11.1",
     "phpstan/phpstan": "^1.8",
     "phpunit/phpunit": "^9.5",
     "phpstan/phpstan-phpunit": "^1.1",
-    "league/route": "^5.1"
+    "phpunit/phpcov": "^8.0.0"
   }
 }
