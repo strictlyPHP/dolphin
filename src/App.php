@@ -4,17 +4,72 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin;
 
+use DI\Container;
+use HaydenPierce\ClassFinder\ClassFinder;
+use League\Route\Router;
+use League\Route\Strategy\ApplicationStrategy;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionClass;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request;
+use StrictlyPHP\Dolphin\Attributes\Route;
 
 class App
 {
     public function __construct(
         private RequestHandlerInterface $router
     ) {
+    }
+
+    /**
+     * @param string[] $controllers
+     */
+    public static function build(array $controllers): self
+    {
+        if (empty($controllers)) {
+            throw new \InvalidArgumentException('No controllers provided');
+        }
+        $container = new Container();
+
+        $strategy = new ApplicationStrategy();
+        $strategy->setContainer($container);
+        $router = new Router();
+        $router->setStrategy($strategy);
+
+        $classes = [];
+        ClassFinder::disablePSR4Vendors();
+        foreach ($controllers as $controller) {
+            if (class_exists($controller)) {
+                $classes[] = $controller;
+            } else {
+                $classes = array_merge(
+                    $classes,
+                    ClassFinder::getClassesInNamespace($controller, ClassFinder::RECURSIVE_MODE)
+                );
+            }
+        }
+
+        if (empty($classes)) {
+            throw new \InvalidArgumentException('No classes found');
+        }
+
+        foreach ($classes as $class) {
+            $reflection = new ReflectionClass($class);
+            $attributes = $reflection->getAttributes(Route::class);
+            foreach ($attributes as $attribute) {
+                /** @var string $requestMethod */
+                $requestMethod = $attribute->getArguments()[0];
+
+                /** @var string $requestPath */
+                $requestPath = $attribute->getArguments()[1];
+
+                $router->map($requestMethod, $requestPath, $class);
+            }
+        }
+
+        return new self($router);
     }
 
     public function getRouter(): RequestHandlerInterface
