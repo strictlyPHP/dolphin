@@ -103,7 +103,6 @@ class App
 
     public function run(array $event, object $context): array
     {
-
         parse_str($event['http']['headers']['cookie'] ?? '', $cookies);
         $request = new Request(
             $event['http']['method'],
@@ -126,7 +125,7 @@ class App
 
             return [
                 'statusCode' => $response->getStatusCode(),
-                'body' => (string)$response->getBody(),
+                'body' => (string) $response->getBody(),
                 'headers' => $response->getHeaders(),
             ];
         } catch (\Exception $e) {

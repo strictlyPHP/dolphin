@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin\Strategy;
 
+use League\Route\Http;
 use League\Route\Http\Exception\BadRequestException;
 use League\Route\Route;
 use League\Route\Strategy\JsonStrategy;
@@ -18,7 +19,6 @@ use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
 use Throwable;
-use League\Route\Http;
 
 class DolphinAppStrategy extends JsonStrategy
 {
@@ -33,16 +33,12 @@ class DolphinAppStrategy extends JsonStrategy
 
     public function getThrowableHandler(): MiddlewareInterface
     {
-        return new class (
-            $this->responseFactory->createResponse(),
-            $this->logger
-        ) implements MiddlewareInterface
-        {
-
+        return new class($this->responseFactory->createResponse(), $this->logger) implements MiddlewareInterface {
             public function __construct(
                 protected ResponseInterface $response,
                 private ?LoggerInterface $logger = null,
-            ) {}
+            ) {
+            }
 
             public function process(
                 ServerRequestInterface $request,
@@ -59,9 +55,9 @@ class DolphinAppStrategy extends JsonStrategy
                         $this->logger->warning(
                             $message,
                             [
-                                'message'  => $exception->getMessage(),
-                                'request'   => (string)$request->getBody(),
-                                'trace'    => $exception->getTrace()
+                                'message' => $exception->getMessage(),
+                                'request' => (string) $request->getBody(),
+                                'trace' => $exception->getTrace(),
                             ]
                         );
                     } else {
@@ -70,15 +66,15 @@ class DolphinAppStrategy extends JsonStrategy
                         $this->logger->critical(
                             $message,
                             [
-                                'message'  => $exception->getMessage(),
-                                'request'   => (string)$request->getBody(),
-                                'trace'    => $exception->getTrace()
+                                'message' => $exception->getMessage(),
+                                'request' => (string) $request->getBody(),
+                                'trace' => $exception->getTrace(),
                             ]
                         );
                     }
 
                     $response->getBody()->write(json_encode([
-                        'statusCode'   => $statusCode,
+                        'statusCode' => $statusCode,
                         'reasonPhrase' => $message,
                     ]));
 
@@ -147,5 +143,43 @@ class DolphinAppStrategy extends JsonStrategy
         }
 
         return $this->decorateResponse($response);
+    }
+
+    protected function buildJsonResponseMiddleware(Http\Exception $exception): MiddlewareInterface
+    {
+        return new class($this->responseFactory->createResponse(), $exception, $this->logger) implements MiddlewareInterface {
+            public function __construct(
+                protected ResponseInterface $response,
+                protected Http\Exception $exception,
+                private ?LoggerInterface $logger = null,
+            ) {
+            }
+
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler
+            ): ResponseInterface {
+                $statusCode = $this->exception->getStatusCode();
+                $message = $this->exception->getMessage();
+                if ($this->logger) {
+                    $this->logger->warning(
+                        $message,
+                        [
+                            'message' => $this->exception->getMessage(),
+                            'request' => (string) $request->getBody(),
+                            'trace' => $this->exception->getTrace(),
+                        ]
+                    );
+                }
+
+                $this->response->getBody()->write(json_encode([
+                    'statusCode' => $statusCode,
+                    'reasonPhrase' => $message,
+                ]));
+
+                $response = $this->response->withAddedHeader('content-type', 'application/json');
+                return $response->withStatus($statusCode);
+            }
+        };
     }
 }
