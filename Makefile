@@ -16,7 +16,7 @@ test: ## Run phpunit tests with coverage
 
 .PHONY: check-coverage
 check-coverage: ## Check the test coverage of changed files
-		git fetch origin && git diff origin/main > ${PWD}/diff.txt && docker build -t strictlyphp80/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp80-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp80/dolphin ./build/check-coverage.sh
+		git fetch origin && git diff origin/v1-php8 > ${PWD}/diff.txt && docker build -t strictlyphp80/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp80-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp80/dolphin ./build/check-coverage.sh
 
 .PHONY: install
 install: ## Install dependencies
