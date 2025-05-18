@@ -4,24 +4,88 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin\Strategy;
 
+use League\Route\Http;
 use League\Route\Http\Exception\BadRequestException;
 use League\Route\Route;
 use League\Route\Strategy\JsonStrategy;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
+use Throwable;
 
 class DolphinAppStrategy extends JsonStrategy
 {
     public function __construct(
         private DtoMapper $dtoMapper,
         ResponseFactoryInterface $responseFactory,
+        private ?LoggerInterface $logger = null,
         ?int $jsonFlags = 0
     ) {
         parent::__construct($responseFactory, $jsonFlags);
+    }
+
+    public function getThrowableHandler(): MiddlewareInterface
+    {
+        return new class($this->responseFactory->createResponse(), $this->logger) implements MiddlewareInterface {
+            public function __construct(
+                protected ResponseInterface $response,
+                private ?LoggerInterface $logger = null,
+            ) {
+            }
+
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler
+            ): ResponseInterface {
+                try {
+                    return $handler->handle($request);
+                } catch (Throwable $exception) {
+                    $response = $this->response;
+
+                    if ($exception instanceof Http\Exception) {
+                        $statusCode = $exception->getStatusCode();
+                        $message = $exception->getMessage();
+                        if ($this->logger) {
+                            $this->logger->warning(
+                                $message,
+                                [
+                                    'message' => $exception->getMessage(),
+                                    'request' => (string) $request->getBody(),
+                                    'trace' => $exception->getTrace(),
+                                ]
+                            );
+                        }
+                    } else {
+                        $statusCode = 500;
+                        $message = 'Internal Server Error';
+                        if ($this->logger) {
+                            $this->logger->critical(
+                                $message,
+                                [
+                                    'message' => $exception->getMessage(),
+                                    'request' => (string) $request->getBody(),
+                                    'trace' => $exception->getTrace(),
+                                ]
+                            );
+                        }
+                    }
+
+                    $response->getBody()->write(json_encode([
+                        'statusCode' => $statusCode,
+                        'reasonPhrase' => $message,
+                    ]));
+
+                    $response = $response->withAddedHeader('content-type', 'application/json');
+                    return $response->withStatus($statusCode);
+                }
+            }
+        };
     }
 
     public function invokeRouteCallable(Route $route, ServerRequestInterface $request): ResponseInterface
@@ -82,5 +146,43 @@ class DolphinAppStrategy extends JsonStrategy
         }
 
         return $this->decorateResponse($response);
+    }
+
+    protected function buildJsonResponseMiddleware(Http\Exception $exception): MiddlewareInterface
+    {
+        return new class($this->responseFactory->createResponse(), $exception, $this->logger) implements MiddlewareInterface {
+            public function __construct(
+                protected ResponseInterface $response,
+                protected Http\Exception $exception,
+                private ?LoggerInterface $logger = null,
+            ) {
+            }
+
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler
+            ): ResponseInterface {
+                $statusCode = $this->exception->getStatusCode();
+                $message = $this->exception->getMessage();
+                if ($this->logger) {
+                    $this->logger->warning(
+                        $message,
+                        [
+                            'message' => $this->exception->getMessage(),
+                            'request' => (string) $request->getBody(),
+                            'trace' => $this->exception->getTrace(),
+                        ]
+                    );
+                }
+
+                $this->response->getBody()->write(json_encode([
+                    'statusCode' => $statusCode,
+                    'reasonPhrase' => $message,
+                ]));
+
+                $response = $this->response->withAddedHeader('content-type', 'application/json');
+                return $response->withStatus($statusCode);
+            }
+        };
     }
 }

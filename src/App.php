@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin;
 
-use DI\Container;
 use DI\ContainerBuilder;
 use HaydenPierce\ClassFinder\ClassFinder;
 use League\Route\Router;
@@ -29,7 +28,8 @@ class App
     public function __construct(
         private readonly RequestHandlerInterface $router,
         private readonly ?LoggerInterface $logger = null
-    ) {}
+    ) {
+    }
 
     /**
      * @param string[] $controllers
@@ -55,7 +55,8 @@ class App
 
         $strategy = new DolphinAppStrategy(
             new DtoMapper(),
-            new ResponseFactory()
+            new ResponseFactory(),
+            $logger
         );
         $strategy->setContainer($container);
         $router = new Router();
@@ -124,7 +125,7 @@ class App
 
             return [
                 'statusCode' => $response->getStatusCode(),
-                'body' => $response->getBody()->getContents(),
+                'body' => (string) $response->getBody(),
                 'headers' => $response->getHeaders(),
             ];
         } catch (\Exception $e) {
