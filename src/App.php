@@ -7,15 +7,17 @@ namespace StrictlyPHP\Dolphin;
 use DI\Container;
 use HaydenPierce\ClassFinder\ClassFinder;
 use League\Route\Router;
-use League\Route\Strategy\ApplicationStrategy;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
+use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request;
 use StrictlyPHP\Dolphin\Attributes\Route;
 use StrictlyPHP\Dolphin\Request\Method;
+use StrictlyPHP\Dolphin\Strategy\DolphinAppStrategy;
+use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 
 class App
 {
@@ -27,14 +29,18 @@ class App
     /**
      * @param string[] $controllers
      */
-    public static function build(array $controllers): self
-    {
+    public static function build(
+        array $controllers,
+    ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
         }
         $container = new Container();
 
-        $strategy = new ApplicationStrategy();
+        $strategy = new DolphinAppStrategy(
+            new DtoMapper(),
+            new ResponseFactory()
+        );
         $strategy->setContainer($container);
         $router = new Router();
         $router->setStrategy($strategy);

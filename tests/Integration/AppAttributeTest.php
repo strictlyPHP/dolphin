@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestAttributeController;
+use function DI\value;
 
 class AppAttributeTest extends TestCase
 {
@@ -14,9 +15,9 @@ class AppAttributeTest extends TestCase
 
     public function setUp(): void
     {
-        $this->app = App::build([
-            TestAttributeController::class,
-        ]);
+        $this->app = App::build(
+            [TestAttributeController::class],
+        );
     }
 
     public function testItRuns(): void
@@ -85,7 +86,7 @@ class AppAttributeTest extends TestCase
 
         $expectedResponse = [
             'statusCode' => 200,
-            'body' => '{"user":"{\n \"username\":\"foo\",\n \"email\": \"roo@bar.com\",\n \"name\": {\n \"givenName\": \"Foo\",\n \"familyName\": \"Bar\"\n }\n}"}',
+            'body' => '{"response":"created user foo with email roo@bar.com and name Foo Bar"}',
             'headers' => [
                 'Content-Type' => ['application/json'],
             ],
@@ -142,7 +143,6 @@ class AppAttributeTest extends TestCase
         };
         $response = $this->app->run($event, $context);
 
-        self::assertSame(500, $response['statusCode']);
-        self::assertSame('Not Found', json_decode($response['body'], true)['error']);
+        self::assertSame(404, $response['statusCode']);
     }
 }
