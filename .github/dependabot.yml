@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "composer"
     directory: "/" # Root directory of your composer.json
     schedule:
-      interval: "daily" # or "weekly", "monthly"
+      interval: "monthly" # or "weekly", "monthly"
     open-pull-requests-limit: 5
     allow:
       - dependency-type: "all" # or "direct", "indirect"
