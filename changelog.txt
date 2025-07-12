@@ -1,0 +1,3 @@
+Changelog for version 1.0.4
+
+- fix attribute bug for v1 (#28) (Ken Lalobo)
