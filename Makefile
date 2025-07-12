@@ -8,7 +8,7 @@ help: ## Display this help message
 
 .PHONY: analyze
 analyze: ## Runs static analysis tools
-		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin php ./vendor/bin/phpstan analyse -l 6 -c phpstan.neon src
+		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin php ./vendor/bin/phpstan analyse -l 6 -c phpstan.neon src tests
 
 .PHONY: coveralls
 coveralls: ## Run phpunit tests with coverage
@@ -20,7 +20,7 @@ check-coverage: ## Check the test coverage of changed files
 
 .PHONY: install
 install: ## Install dependencies
-		docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin composer install
+		rm -fr vendor composer.lock && docker build -t strictlyphp82/dolphin . && docker run --user=$(shell id -u):$(shell id -g) --rm --name strictlyphp82-dolphin -v "${PWD}":/usr/src/myapp -w /usr/src/myapp strictlyphp82/dolphin composer install
 
 .PHONY: style
 style: ## Check coding style
