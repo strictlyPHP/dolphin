@@ -22,6 +22,13 @@ class AppNamedAttributeTest extends TestCase
         );
     }
 
+    public function testBuildWithNoControllersThrowsException(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No controllers provided');
+        App::build([]);
+    }
+
     public function testItRuns(): void
     {
         $event = [
