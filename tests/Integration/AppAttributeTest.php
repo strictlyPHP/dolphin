@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestAttributeController;
-use function DI\value;
 
 class AppAttributeTest extends TestCase
 {
@@ -16,7 +15,9 @@ class AppAttributeTest extends TestCase
     public function setUp(): void
     {
         $this->app = App::build(
-            [TestAttributeController::class],
+            [
+                TestAttributeController::class,
+            ],
         );
     }
 
