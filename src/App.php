@@ -83,11 +83,13 @@ class App
             $reflection = new ReflectionClass($class);
             $attributes = $reflection->getAttributes(Route::class);
             foreach ($attributes as $attribute) {
+                $arguments = $attribute->getArguments();
+
                 /** @var string $requestMethod */
-                $requestMethod = $attribute->getArguments()[0];
+                $requestMethod = $arguments[0] ?? $arguments['method'];
 
                 /** @var string $requestPath */
-                $requestPath = $attribute->getArguments()[1];
+                $requestPath = $arguments[1] ?? $arguments['path'];
 
                 $router->map($requestMethod, $requestPath, $class);
             }
