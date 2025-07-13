@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace StrictlyPHP\Tests\Dolphin\Integration;
 
+use DI\ContainerBuilder;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
@@ -15,7 +16,10 @@ class AppTest extends TestCase
     {
         /** @var callable $router */
         $router = require __DIR__ . '/../Fixtures/routes.php';
-        $this->app = new App($router());
+        $this->app = new App(
+            $router(),
+            (new ContainerBuilder())->build()
+        );
     }
 
     public function testItRuns(): void
