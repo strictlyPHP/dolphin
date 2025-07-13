@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin;
 
-use DI\Container;
 use DI\ContainerBuilder;
 use HaydenPierce\ClassFinder\ClassFinder;
 use League\Route\Router;
 use Monolog\Handler\StreamHandler;
-use Monolog\Level;
 use Monolog\Logger;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
@@ -27,6 +26,7 @@ class App
 {
     public function __construct(
         private RequestHandlerInterface $router,
+        private ContainerInterface $container,
         private ?LoggerInterface $logger = null
     ) {
     }
@@ -36,13 +36,17 @@ class App
      */
     public static function build(
         array $controllers,
+        array $containerDefinitions = []
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
         }
-        $container = (new ContainerBuilder())
-            ->useAttributes(true)
-            ->build();
+        $containerBuilder = new ContainerBuilder();
+        $containerBuilder->useAttributes(true);
+        if (sizeof($containerDefinitions) > 0) {
+            $containerBuilder->addDefinitions($containerDefinitions);
+        }
+        $container = $containerBuilder->build();
 
         $logger = new Logger('dolphin');
         // Log INFO and above to stdout
@@ -95,12 +99,17 @@ class App
             }
         }
 
-        return new self($router, $logger);
+        return new self($router, $container, $logger);
     }
 
     public function getRouter(): RequestHandlerInterface
     {
         return $this->router;
+    }
+
+    public function get(string $id): mixed
+    {
+        return $this->container->get($id);
     }
 
     public function run(array $event, object $context): array
