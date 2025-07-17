@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace StrictlyPHP\Tests\Dolphin\Integration;
 
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestAttributeController;
@@ -18,6 +19,28 @@ class AppAttributeTest extends TestCase
         $this->app = App::build(
             [TestAttributeController::class],
         );
+    }
+
+    public function testContainerDefinitions(): void
+    {
+        $app = App::build(
+            [
+                TestAttributeController::class,
+            ],
+            [
+                'foo' => \Di\factory(function (ContainerInterface $c) {
+                    return new class() {
+                    };
+                }),
+            ]
+        );
+        self::assertIsObject($app->get('foo'));
+    }
+
+    public function testGetFromContainerThrowsException(): void
+    {
+        $this->expectException(\DI\NotFoundException::class);
+        self::assertIsObject($this->app->get('foo'));
     }
 
     public function testItRuns(): void

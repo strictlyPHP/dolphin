@@ -18,6 +18,9 @@ RUN apt-get update && \
         php8.0-xml \
         curl \
         php8.0-curl \
-        php8.0-mbstring
+        php8.0-mbstring \
+        php8.0-mysql \
+        php8.0-pgsql \
+        php8.0-sqlite3
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
