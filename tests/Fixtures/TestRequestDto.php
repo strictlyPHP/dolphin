@@ -8,7 +8,7 @@ class TestRequestDto
 {
     public function __construct(
         private string $username,
-        private string $email,
+        private EmailAddress $email,
         private PersonName $name
     ) {
     }
@@ -18,7 +18,7 @@ class TestRequestDto
         return $this->username;
     }
 
-    public function getEmail(): string
+    public function getEmail(): EmailAddress
     {
         return $this->email;
     }
