@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Tests\Dolphin\Fixtures;
 
-readonly class TestRequestDto
+class EmailAddress
 {
     public function __construct(
-        public string $username,
-        public EmailAddress $email,
-        public PersonName $name
+        public string $value
     ) {
     }
 }
