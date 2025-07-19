@@ -1,3 +1,4 @@
-Changelog for version 1.0.4
+Changelog for version 1.0.5
 
-- fix attribute bug for v1 (#28) (Ken Lalobo)
+- add debug mode and fix dto mapper bug (Ken Lalobo)
+- enable setting container definitions (Ken Lalobo)
