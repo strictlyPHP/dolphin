@@ -26,17 +26,19 @@ class DolphinAppStrategy extends JsonStrategy
         private DtoMapper $dtoMapper,
         ResponseFactoryInterface $responseFactory,
         private ?LoggerInterface $logger = null,
-        ?int $jsonFlags = 0
+        ?int $jsonFlags = 0,
+        private ?bool $debugMode = false
     ) {
         parent::__construct($responseFactory, $jsonFlags);
     }
 
     public function getThrowableHandler(): MiddlewareInterface
     {
-        return new class($this->responseFactory->createResponse(), $this->logger) implements MiddlewareInterface {
+        return new class($this->responseFactory->createResponse(), $this->logger, $this->debugMode) implements MiddlewareInterface {
             public function __construct(
                 protected ResponseInterface $response,
                 private ?LoggerInterface $logger = null,
+                private ?bool $debugMode = false
             ) {
             }
 
@@ -73,13 +75,23 @@ class DolphinAppStrategy extends JsonStrategy
                         );
                     }
 
-                    $response->getBody()->write(json_encode([
+                    $responseData = [
                         'statusCode' => $statusCode,
                         'reasonPhrase' => $message,
-                    ]));
+                    ];
+                    if ($this->debugMode === true) {
+                        $responseData['exception'] = [
+                            'message' => $exception->getMessage(),
+                            'request' => (string) $request->getBody(),
+                            'trace' => $exception->getTrace(),
+                        ];
+                    }
 
-                    $response = $response->withAddedHeader('content-type', 'application/json');
-                    return $response->withStatus($statusCode);
+                    $response->getBody()->write(json_encode($responseData));
+
+                    return $response
+                        ->withAddedHeader('content-type', 'application/json')
+                        ->withStatus($statusCode);
                 }
             }
         };

@@ -36,7 +36,8 @@ class App
      */
     public static function build(
         array $controllers,
-        array $containerDefinitions = []
+        array $containerDefinitions = [],
+        ?bool $debugMode = false
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -58,9 +59,10 @@ class App
         $container->set(LoggerInterface::class, new Logger('dolphin_logger'));
 
         $strategy = new DolphinAppStrategy(
-            new DtoMapper(),
-            new ResponseFactory(),
-            $logger
+            dtoMapper: new DtoMapper(),
+            responseFactory: new ResponseFactory(),
+            logger: $logger,
+            debugMode: $debugMode,
         );
         $strategy->setContainer($container);
         $router = new Router();

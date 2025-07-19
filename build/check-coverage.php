@@ -8,7 +8,7 @@ if (strstr($data, "Unable to detect executable lines that were changed")) {
 
 preg_match('/[0-9]+(\.[0-9]+)%/',$data, $matches);
 $percentActual = floatval($matches[0] ?? 0);
-$percentNeeded = 85;
+$percentNeeded = 90;
 if ($percentActual < $percentNeeded) {
     echo $data;
     throw new \Exception(sprintf(
