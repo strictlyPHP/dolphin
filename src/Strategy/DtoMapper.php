@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StrictlyPHP\Dolphin\Strategy;
 
 use Exception;
+use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
 
 class DtoMapper
 {
@@ -26,11 +27,22 @@ class DtoMapper
             if ($type instanceof \ReflectionNamedType && ! $type->isBuiltin()) {
                 // Recursive DTO
                 $nestedClass = $type->getName();
-
-                if (isset($data[$name]) && is_array($data[$name])) {
-                    $args[] = $this->map($nestedClass, $data[$name]);
+                if (isset($data[$name])) {
+                    if (is_array($data[$name])) {
+                        $args[] = $this->map($nestedClass, $data[$name]);
+                    } else {
+                        $refNestedClass = new \ReflectionClass($nestedClass);
+                        $args[] = $refNestedClass->newInstanceArgs([$data[$name]]);
+                    }
                 } else {
-                    throw new Exception(sprintf('parameter %s has no type', $name));
+                    throw new DtoMapperException(
+                        sprintf(
+                            'parameter %s of type %s cannot be mapped data is %s',
+                            $name,
+                            $nestedClass,
+                            json_encode($data)
+                        )
+                    );
                 }
             } else {
                 $args[] = $data[$name] ?? null;
