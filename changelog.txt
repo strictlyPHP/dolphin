@@ -1,4 +1,3 @@
-Changelog for version 2.0.5
+Changelog for version 2.0.6
 
-- add debug mode and fix dto mapper bug (Ken Lalobo)
-- enable setting container definitions (Ken Lalobo)
+- fix logger bug (Ken Lalobo)
