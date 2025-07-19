@@ -1,6 +1,4 @@
-Changelog for version 2.0.4
+Changelog for version 2.0.5
 
-- update build (Ken Lalobo)
-- increase test coverage and change dependabot settings (#30) (Ken Lalobo)
-- deps(deps-dev): update symplify/easy-coding-standard requirement || ^12.0 (#29) (dependabot[bot])
-- fix attribute bug (#27) (Ken Lalobo)
+- add debug mode and fix dto mapper bug (Ken Lalobo)
+- enable setting container definitions (Ken Lalobo)
