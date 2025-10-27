@@ -65,6 +65,3 @@ function main(array $event, object $context): array
 ## License
 
 This project is licensed under the MIT License.
-```
-
-This markdown version includes installation instructions, usage details (routes and controllers), and the main application setup. It is a comprehensive README for the Dolphin framework.
