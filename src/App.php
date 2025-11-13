@@ -34,12 +34,15 @@ class App
     }
 
     /**
-     * @param string[] $controllers
+     * @param array<int, string> $controllers
+     * @param array<int, mixed> $containerDefinitions
+     * @param array<int, class-string> $middlewares
      */
     public static function build(
         array $controllers,
         array $containerDefinitions = [],
-        ?bool $debugMode = false
+        ?bool $debugMode = false,
+        ?array $middlewares = []
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -69,6 +72,7 @@ class App
         $strategy->setContainer($container);
         $router = new Router();
         $router->setStrategy($strategy);
+        $router->lazyMiddlewares($middlewares);
 
         $classes = [];
         ClassFinder::disablePSR4Vendors();
