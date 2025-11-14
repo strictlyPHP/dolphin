@@ -1,3 +1,6 @@
-Changelog for version 2.0.6
+Changelog for version 2.1.0
 
-- fix logger bug (Ken Lalobo)
+- add middleware (Ken Lalobo)
+- add middleware (Ken Lalobo)
+- Update README.md (Ken Lalobo)
+- Bump actions/checkout from 4 to 5 (dependabot[bot])
