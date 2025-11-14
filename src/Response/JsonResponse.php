@@ -10,6 +10,9 @@ use Slim\Psr7\Response;
 
 class JsonResponse extends Response
 {
+    /**
+     * @param \JsonSerializable|array<mixed, mixed> $body
+     */
     public function __construct(\JsonSerializable|array $body)
     {
         parent::__construct(
