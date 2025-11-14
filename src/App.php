@@ -35,7 +35,7 @@ class App
 
     /**
      * @param array<int, string> $controllers
-     * @param array<int, mixed> $containerDefinitions
+     * @param array<string, mixed> $containerDefinitions
      * @param array<int, class-string> $middlewares
      */
     public static function build(
@@ -120,6 +120,10 @@ class App
         return $this->container->get($id);
     }
 
+    /**
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
     public function run(array $event, object $context): array
     {
         parse_str($event['http']['headers']['cookie'] ?? '', $cookies);

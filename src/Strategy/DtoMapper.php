@@ -9,6 +9,9 @@ use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
 
 class DtoMapper
 {
+    /**
+     * @param array<mixed, mixed> $data
+     */
     public function map(string $dtoClass, array $data): object
     {
         $refClass = new \ReflectionClass($dtoClass);

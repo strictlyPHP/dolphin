@@ -18,6 +18,9 @@ class TestAttributeController
     ) {
     }
 
+    /**
+     * @param array<int, string> $vars
+     */
     public function __invoke(TestRequestDto $testDto, ServerRequestInterface $request, array $vars): ResponseInterface
     {
         if ($testDto->username === 'not-authorised') {
