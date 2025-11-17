@@ -1,4 +1,3 @@
-Changelog for version 2.2.0
+Changelog for version 3.0.0
 
-- add more complex parsing for class detection in dto mapper (Ken Lalobo)
-- add typed array mapping (Ken Lalobo)
+- use nikic/php-parser 5+ (Ken Lalobo)
