@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin\Strategy;
 
+use PhpParser\Error;
+use PhpParser\Node;
+use PhpParser\Node\Stmt\UseUse;
+use PhpParser\ParserFactory;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -11,6 +15,11 @@ use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
 
 class DtoMapper
 {
+    /**
+     * @var array<string, array<string,string>>
+     */
+    private array $importMapCache = [];
+
     /**
      * @param array<mixed, mixed> $data
      */
@@ -85,24 +94,119 @@ class DtoMapper
 
     private function resolveArrayDocblockType(ReflectionParameter $param): string
     {
-        $doc = $param->getDeclaringFunction()->getDocComment() ?: '';
+        $rawDoc = $param->getDeclaringFunction()->getDocComment() ?: '';
         $paramName = $param->getName();
-        $dtoNamespace = $param->getDeclaringClass()->getNamespaceName();
 
-        if (preg_match('/@param\s+array(?:<[\w\\\]+\s*,\s*)?(\??[\w\\\]+)>\s+\$' . preg_quote($paramName, '/') . '/i', $doc, $m)) {
-            $class = ltrim($m[1], '?');
+        // collapse whitespace
+        $doc = preg_replace('/\s+/', ' ', $rawDoc);
 
-            // Don't prepend namespace for primitive types
-            if (! in_array(strtolower($class), ['string', 'int', 'float', 'bool'], true) && $class[0] !== '\\') {
-                $class = $dtoNamespace . '\\' . $class;
+        if (
+            preg_match(
+                '/@param\s+array\s*<\s*(?:[\w\\\\]+\s*,\s*)?(\??[\w\\\\]+)\s*>\s+\$' .
+                preg_quote($paramName, '/') .
+                '/i',
+                $doc,
+                $m
+            )
+        ) {
+            $type = ltrim($m[1], '?');
+
+            // primitive?
+            if (in_array(strtolower($type), ['string', 'int', 'float', 'bool'], true)) {
+                return $type;
             }
 
-            return $class;
+            // Try to resolve class name via imports
+            $fqcn = $this->resolveClassNameFromImports($param, $type);
+            return $fqcn;
         }
 
-        throw new DtoMapperException(
-            sprintf('Cannot determine array element type for parameter %s', $paramName)
-        );
+        throw new DtoMapperException("Cannot determine array element type for parameter $paramName");
+    }
+
+    private function resolveClassNameFromImports(ReflectionParameter $param, string $shortName): string
+    {
+        $dtoClass = $param->getDeclaringClass()->getName();
+        $importMap = $this->getImportMapForDto($dtoClass);
+
+        // If the short name matches an import alias, return that
+        if (isset($importMap[$shortName])) {
+            return $importMap[$shortName];
+        }
+
+        // Otherwise fallback to namespace of the DTO
+        $dtoNamespace = $param->getDeclaringClass()->getNamespaceName();
+        $candidate = $dtoNamespace . '\\' . $shortName;
+
+        if (class_exists($candidate)) {
+            return $candidate;
+        }
+
+        throw new DtoMapperException("Cannot resolve class name '$shortName' for parameter {$param->getName()}");
+    }
+
+    /**
+     * @return array<string, string> alias => fqcn
+     */
+    private function getImportMapForDto(string $dtoClass): array
+    {
+        if (isset($this->importMapCache[$dtoClass])) {
+            return $this->importMapCache[$dtoClass];
+        }
+
+        $ref = new ReflectionClass($dtoClass);
+        $file = $ref->getFileName();
+        $imports = $this->parseUseStatementsFromFile($file);
+
+        $this->importMapCache[$dtoClass] = $imports;
+        return $imports;
+    }
+
+    /**
+     * Parse a file and extract `use` statements (class imports) using PHP-Parser
+     *
+     * @return array<string, string> alias => fqcn (fully qualified class name)
+     */
+    private function parseUseStatementsFromFile(string $filePath): array
+    {
+        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
+        $code = file_get_contents($filePath);
+        if ($code === false) {
+            throw new DtoMapperException("Cannot read file for class imports: $filePath");
+        }
+
+        try {
+            $ast = $parser->parse($code);
+        } catch (Error $e) {
+            throw new DtoMapperException("PHP parser error on $filePath: {$e->getMessage()}");
+        }
+
+        $imports = [];
+        foreach ($ast as $node) {
+            if ($node instanceof Node\Stmt\Namespace_) {
+                foreach ($node->stmts as $stmt) {
+                    if ($stmt instanceof Node\Stmt\Use_) {
+                        foreach ($stmt->uses as $use) {
+                            /** @var UseUse $use */
+                            $alias = $use->alias ? $use->alias->name : $use->name->getLast();
+                            $fqcn = $use->name->toString(); // fully qualified name without leading "\"
+                            $imports[$alias] = $fqcn;
+                        }
+                    }
+                }
+                break; // after namespace, other uses of top-level use done
+            } elseif ($node instanceof Node\Stmt\Use_) {
+                // global namespace uses
+                foreach ($node->uses as $use) {
+                    /** @var UseUse $use */
+                    $alias = $use->alias ? $use->alias->name : $use->name->getLast();
+                    $fqcn = $use->name->toString();
+                    $imports[$alias] = $fqcn;
+                }
+            }
+        }
+
+        return $imports;
     }
 
     private function arrayAllowsNullElements(ReflectionParameter $param): bool

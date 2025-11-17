@@ -1,6 +1,10 @@
 includes:
-	- vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
 
 parameters:
+    ignoreErrors:
+        - message: '#has parameter \$data with no value type specified in iterable type#'
+          path: tests/Fixtures/Request/TestArrayRequestDto.php
+          count: 1
 
 rules:

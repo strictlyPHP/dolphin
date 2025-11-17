@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use StrictlyPHP\Dolphin\Attributes\Route;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Response\JsonResponse;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestDto;
 
 #[Route(method: Method::POST, path: '/test')]
 class TestNamedAttributeController
