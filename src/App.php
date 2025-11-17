@@ -133,7 +133,7 @@ class App
                 sprintf(
                     '%s/%s%s',
                     $context->apiHost,
-                    $event['http']['path'],
+                    ltrim($event['http']['path'], '/'),
                     ! empty($event['http']['queryString']) ? '?' . $event['http']['queryString'] : ''
                 )
             ),
