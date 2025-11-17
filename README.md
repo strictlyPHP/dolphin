@@ -7,7 +7,7 @@
 Dolphin is a lightweight PHP framework designed for running DigitalOcean functions. It has two versions:
 
 - **v1**: For PHP 8
-- **v2**: For PHP 8.2
+- **v2+**: For PHP 8.2
 
 ## Installation
 
@@ -15,7 +15,7 @@ Install Dolphin via Composer:
 
 ```bash
 composer require strictlyphp/dolphin:^1.0  # For PHP 8
-composer require strictlyphp/dolphin:^2.0  # For PHP 8.2
+composer require strictlyphp/dolphin:^3.0  # For PHP 8.2
 ```
 
 ## Usage
