@@ -1,6 +1,4 @@
-Changelog for version 2.1.0
+Changelog for version 2.2.0
 
-- add middleware (Ken Lalobo)
-- add middleware (Ken Lalobo)
-- Update README.md (Ken Lalobo)
-- Bump actions/checkout from 4 to 5 (dependabot[bot])
+- add more complex parsing for class detection in dto mapper (Ken Lalobo)
+- add typed array mapping (Ken Lalobo)
