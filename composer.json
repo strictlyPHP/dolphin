@@ -33,7 +33,7 @@
     "haydenpierce/class-finder": "^0.5.3",
     "league/route": "^6.2",
     "monolog/monolog": "^3.9",
-    "nikic/php-parser": "^4"
+    "nikic/php-parser": "^5"
   },
   "require-dev": {
     "symplify/easy-coding-standard": "^11.1 || ^12.0",

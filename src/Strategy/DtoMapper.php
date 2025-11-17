@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Dolphin\Strategy;
 
-use PhpParser\Error;
+use PhpParser\Lexer\Emulative;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\UseUse;
-use PhpParser\ParserFactory;
+use PhpParser\Parser\Php8;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -169,34 +169,43 @@ class DtoMapper
      */
     private function parseUseStatementsFromFile(string $filePath): array
     {
-        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
         $code = file_get_contents($filePath);
         if ($code === false) {
             throw new DtoMapperException("Cannot read file for class imports: $filePath");
         }
 
+        $parser = new Php8(new Emulative());
+
         try {
             $ast = $parser->parse($code);
-        } catch (Error $e) {
+        } catch (\PhpParser\Error $e) {
             throw new DtoMapperException("PHP parser error on $filePath: {$e->getMessage()}");
         }
 
         $imports = [];
+
+        if (! is_array($ast)) {
+            return $imports;
+        }
+
         foreach ($ast as $node) {
+            // If file has a namespace
             if ($node instanceof Node\Stmt\Namespace_) {
                 foreach ($node->stmts as $stmt) {
                     if ($stmt instanceof Node\Stmt\Use_) {
                         foreach ($stmt->uses as $use) {
                             /** @var UseUse $use */
                             $alias = $use->alias ? $use->alias->name : $use->name->getLast();
-                            $fqcn = $use->name->toString(); // fully qualified name without leading "\"
+                            $fqcn = $use->name->toString(); // fully qualified class name
                             $imports[$alias] = $fqcn;
                         }
                     }
                 }
-                break; // after namespace, other uses of top-level use done
-            } elseif ($node instanceof Node\Stmt\Use_) {
-                // global namespace uses
+                break; // only process the first namespace
+            }
+
+            // Global namespace use statements
+            if ($node instanceof Node\Stmt\Use_) {
                 foreach ($node->uses as $use) {
                     /** @var UseUse $use */
                     $alias = $use->alias ? $use->alias->name : $use->name->getLast();
