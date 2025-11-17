@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StrictlyPHP\Tests\Dolphin\Fixtures;
+namespace StrictlyPHP\Tests\Dolphin\Fixtures\Value;
 
 class EmailAddress
 {

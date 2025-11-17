@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace StrictlyPHP\Tests\Dolphin\Fixtures;
 
+use StrictlyPHP\Tests\Dolphin\Fixtures\Value\EmailAddress;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Value\PersonName;
+
 class TestService
 {
     public function run(
