@@ -54,14 +54,18 @@ class App
         }
         $container = $containerBuilder->build();
 
-        $logger = new Logger('dolphin_logger');
-        // Log INFO and above to stdout
-        $logger->pushHandler(new StreamHandler('php://stdout', Level::Info));
+        if ($container->has(LoggerInterface::class)) {
+            $logger = $container->get(LoggerInterface::class);
+        } else {
+            $logger = new Logger('dolphin_logger');
+            // Log INFO and above to stdout
+            $logger->pushHandler(new StreamHandler('php://stdout', Level::Info));
 
-        // Log WARNING and above to stderr
-        $logger->pushHandler(new StreamHandler('php://stderr', Level::Warning));
+            // Log WARNING and above to stderr
+            $logger->pushHandler(new StreamHandler('php://stderr', Level::Warning));
 
-        $container->set(LoggerInterface::class, $logger);
+            $container->set(LoggerInterface::class, $logger);
+        }
 
         $strategy = new DolphinAppStrategy(
             dtoMapper: new DtoMapper(),

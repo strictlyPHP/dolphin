@@ -6,19 +6,28 @@ namespace StrictlyPHP\Tests\Dolphin\Integration;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use StrictlyPHP\Dolphin\App;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestAttributeController;
+use StrictlyPHP\Tests\Dolphin\Fixtures\TestLogger;
 
 class AppAttributeTest extends TestCase
 {
     protected App $app;
 
+    protected TestLogger $logger;
+
     public function setUp(): void
     {
+        $this->logger = new TestLogger();
+
         $this->app = App::build(
             [
                 TestAttributeController::class,
             ],
+            [
+                LoggerInterface::class => $this->logger,
+            ]
         );
     }
 
