@@ -13,10 +13,10 @@ class JsonResponse extends Response
     /**
      * @param \JsonSerializable|array<mixed, mixed> $body
      */
-    public function __construct(\JsonSerializable|array $body)
+    public function __construct(\JsonSerializable|array $body, ?int $status = StatusCodeInterface::STATUS_OK)
     {
         parent::__construct(
-            StatusCodeInterface::STATUS_OK,
+            $status,
             new Headers([
                 'Content-Type' => 'application/json',
             ]),
