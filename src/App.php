@@ -42,7 +42,8 @@ class App
         array $controllers,
         array $containerDefinitions = [],
         ?bool $debugMode = false,
-        ?array $middlewares = []
+        ?array $middlewares = [],
+        ?bool $includeRoleCheck = true
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -72,6 +73,7 @@ class App
             responseFactory: new ResponseFactory(),
             logger: $logger,
             debugMode: $debugMode,
+            includeRoleCheck: $includeRoleCheck
         );
         $strategy->setContainer($container);
         $router = new Router();
