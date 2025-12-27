@@ -1,3 +1,4 @@
-Changelog for version 3.0.4
+Changelog for version 3.0.5
 
-- add roles (Ken Lalobo)
+- changes after review (Ken Lalobo)
+- fix incorrect parsing of array types in dto mapper (Ken Lalobo)
