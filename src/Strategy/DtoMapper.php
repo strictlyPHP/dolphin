@@ -100,15 +100,16 @@ class DtoMapper
         // collapse whitespace
         $doc = preg_replace('/\s+/', ' ', $rawDoc);
 
-        if (
-            preg_match(
-                '/@param\s+array\s*<\s*(?:[\w\\\\]+\s*,\s*)?(\??[\w\\\\]+)\s*>\s+\$' .
-                preg_quote($paramName, '/') .
-                '/i',
-                $doc,
-                $m
-            )
-        ) {
+        $pattern =
+            '/@param\s+array\s*<\s*' .
+            '(?:[\w\\\\]+\s*,\s*)?' .      // optional key type: int,
+            '(\??[\w\\\\]+)\s*' .          // capture value type: ?Geography
+            '>\s*' .
+            '(?:\|\s*null)?\s*' .          // allow trailing union: |null
+            '\$' . preg_quote($paramName, '/') .
+            '\b/i';
+
+        if (preg_match($pattern, $doc, $m)) {
             $type = ltrim($m[1], '?');
 
             // primitive?
@@ -282,7 +283,13 @@ class DtoMapper
 
             // single-value constructor objects (e.g., EmailAddress)
             $ref = new \ReflectionClass($elementClass);
-            $out[] = $ref->newInstanceArgs([$val]);
+
+            // enum
+            if ($ref->isEnum()) {
+                $out[] = $elementClass::from($val);
+            } else {
+                $out[] = $ref->newInstanceArgs([$val]);
+            }
         }
 
         return $out;
