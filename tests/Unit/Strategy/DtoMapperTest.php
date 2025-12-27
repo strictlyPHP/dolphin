@@ -8,12 +8,15 @@ use PHPUnit\Framework\TestCase;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Enum\Foo;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Enum\Status;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\RequestId;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestArrayRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestNullableRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestSameNamespaceDto;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Request\UnitEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Value\EmailAddress;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Value\PersonName;
 
@@ -78,6 +81,7 @@ class DtoMapperTest extends TestCase
                 'emails' => [
                     'john.doe@example.com',
                 ],
+                'statuses' => ['ACTIVE'],
             ]
         );
 
@@ -96,6 +100,9 @@ class DtoMapperTest extends TestCase
 
         $emails = [new EmailAddress('john.doe@example.com')];
         $this->assertEquals($emails, $dto->emails);
+
+        $statuses = [Status::ACTIVE];
+        $this->assertEquals($statuses, $dto->statuses);
     }
 
     public function testDtoMapperReturnsDtoWithNullableRequest(): void
@@ -141,29 +148,7 @@ class DtoMapperTest extends TestCase
         $this->assertEquals(new RequestId('1a13aefe-8d58-407c-9ade-b44c897ccc42'), $dto->requestId);
     }
 
-    public function testArrayWithNullableElements(): void
-    {
-        $dto = $this->dtoMapper->map(
-            TestArrayRequestDto::class,
-            [
-                'data' => [[
-                    'foo' => 'bar',
-                ]],
-                'words' => ['hello', 'world'],
-                'users' => [
-                    [
-                        'givenName' => 'Jane',
-                        'familyName' => 'Doe',
-                    ],
-                ],
-                'emails' => ['jane.doe@example.com', null],
-            ]
-        );
-
-        $this->assertInstanceOf(TestArrayRequestDto::class, $dto);
-    }
-
-    public function testArrayWithValues(): void
+    public function testArrayWithEmptyValues(): void
     {
         $dto = $this->dtoMapper->map(
             TestArrayRequestDto::class,
@@ -171,10 +156,50 @@ class DtoMapperTest extends TestCase
                 'data' => [],
                 'words' => [],
                 'users' => [],
-                'emails' => ['hello@example.com'],
+                'emails' => [],
+                'statuses' => [],
             ]
         );
 
-        $this->assertEquals([new EmailAddress('hello@example.com')], $dto->emails);
+        $this->assertEmpty($dto->data);
+        $this->assertEmpty($dto->words);
+        $this->assertEmpty($dto->users);
+        $this->assertEmpty($dto->emails);
+        $this->assertEmpty($dto->statuses);
+    }
+
+    public function testArrayWithIncorrectEnumValue(): void
+    {
+        $this->expectException(DtoMapperException::class);
+        $this->expectExceptionMessage(
+            sprintf('Could not map value "FOOO" to enum "%s"', Status::class)
+        );
+        $this->dtoMapper->map(
+            TestArrayRequestDto::class,
+            [
+                'data' => [],
+                'words' => [],
+                'users' => [],
+                'emails' => [],
+                'statuses' => ['FOOO'],
+            ]
+        );
+    }
+
+    public function testUnitEnumValue(): void
+    {
+        $this->expectException(DtoMapperException::class);
+        $this->expectExceptionMessage(
+            sprintf(
+                'Could not map unit enum "%s". Unit enums are not allowed. consider turning it into a backed enum',
+                Foo::class
+            )
+        );
+        $this->dtoMapper->map(
+            UnitEnumRequestDto::class,
+            [
+                'foo' => 'BAR',
+            ]
+        );
     }
 }

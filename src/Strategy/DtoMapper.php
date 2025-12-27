@@ -11,6 +11,7 @@ use PhpParser\Parser\Php8;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
+use StrictlyPHP\Dolphin\Strategy\Exception\ArrayTypeNotDeclaredException;
 use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
 
 class DtoMapper
@@ -60,7 +61,7 @@ class DtoMapper
                     $elementClass = $this->resolveArrayDocblockType($param);
                     $allowsNull = $this->arrayAllowsNullElements($param);
                     $args[] = $this->mapArrayOfType($elementClass, $raw, $allowsNull);
-                } catch (DtoMapperException $e) {
+                } catch (ArrayTypeNotDeclaredException $e) {
                     // No element type declared, treat as plain array
                     $args[] = $raw;
                 }
@@ -122,7 +123,7 @@ class DtoMapper
             return $fqcn;
         }
 
-        throw new DtoMapperException("Cannot determine array element type for parameter $paramName");
+        throw new ArrayTypeNotDeclaredException("Cannot determine array element type for parameter $paramName");
     }
 
     private function resolveClassNameFromImports(ReflectionParameter $param, string $shortName): string
@@ -234,7 +235,7 @@ class DtoMapper
 
         // enum
         if ($ref->isEnum()) {
-            return $className::from($value);
+            return $this->newEnum($className, $value);
         }
 
         // nested DTO
@@ -253,7 +254,6 @@ class DtoMapper
     private function mapArrayOfType(string $elementClass, array $values, bool $nullableElements): array
     {
         $out = [];
-
         foreach ($values as $val) {
             if ($val === null) {
                 if ($nullableElements) {
@@ -284,14 +284,39 @@ class DtoMapper
             // single-value constructor objects (e.g., EmailAddress)
             $ref = new \ReflectionClass($elementClass);
 
-            // enum
+            // Handle enums
             if ($ref->isEnum()) {
-                $out[] = $elementClass::from($val);
+                $out[] = $this->newEnum($elementClass, $val);
             } else {
+                // Non-enum single-value constructor objects
                 $out[] = $ref->newInstanceArgs([$val]);
             }
         }
-
         return $out;
+    }
+
+    /**
+     * @param class-string $enumClass
+     */
+    private function newEnum(string $enumClass, mixed $value): \BackedEnum
+    {
+        $enumRef = new \ReflectionEnum($enumClass);
+
+        if ($enumRef->isBacked()) {
+            // For backed enums, use tryFrom for safe conversion
+            if (($enum = $enumClass::tryFrom($value)) === null) {
+                throw new DtoMapperException(sprintf(
+                    'Could not map value "%s" to enum "%s"',
+                    is_scalar($value) ? (string) $value : gettype($value),
+                    $enumClass
+                ));
+            }
+            return $enum;
+        } else {
+            throw new DtoMapperException(sprintf(
+                'Could not map unit enum "%s". Unit enums are not allowed. consider turning it into a backed enum',
+                $enumClass
+            ));
+        }
     }
 }
