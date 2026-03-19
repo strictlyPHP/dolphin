@@ -196,6 +196,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -212,6 +214,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -228,6 +232,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -244,6 +250,8 @@ class DtoMapperTest extends TestCase
                 'email' => null,
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -259,6 +267,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -275,6 +285,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'random',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -291,6 +303,8 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
 
@@ -309,8 +323,65 @@ class DtoMapperTest extends TestCase
                 'email' => 'a@b.com',
                 'status' => 'ACTIVE',
                 'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
             ]
         );
+    }
+
+    public function testUnionTypeValueObject(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+                'contact' => 'test@example.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+            ]
+        );
+
+        $this->assertInstanceOf(EmailAddress::class, $dto->contact);
+        $this->assertSame('test@example.com', $dto->contact->value);
+    }
+
+    public function testUnionTypeNestedDto(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+            ]
+        );
+
+        $this->assertInstanceOf(PersonName::class, $dto->metadata);
+        $this->assertSame('John', $dto->metadata->givenName);
+        $this->assertSame('Doe', $dto->metadata->familyName);
+    }
+
+    public function testUnionTypeArrayFallback(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+                'contact' => 'a@b.com',
+                'metadata' => ['foo' => 'bar'],
+            ]
+        );
+
+        $this->assertIsArray($dto->metadata);
+        $this->assertSame(['foo' => 'bar'], $dto->metadata);
     }
 
     public function testUnitEnumValue(): void
