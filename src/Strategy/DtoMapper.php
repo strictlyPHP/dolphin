@@ -360,7 +360,7 @@ class DtoMapper
                 if (class_exists($className)) {
                     try {
                         return (new ReflectionClass($className))->newInstanceArgs([$raw]);
-                    } catch (\Exception) {
+                    } catch (\ReflectionException | \TypeError | \ArgumentCountError) {
                         continue;
                     }
                 }
