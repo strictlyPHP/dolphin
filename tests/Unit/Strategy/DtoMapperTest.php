@@ -16,6 +16,7 @@ use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestNullableRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestSameNamespaceDto;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestUnionTypeNoMatchDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestUnionTypeRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\UnitEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Value\EmailAddress;
@@ -416,6 +417,19 @@ class DtoMapperTest extends TestCase
         $this->assertSame([
             'foo' => 'bar',
         ], $dto->metadata);
+    }
+
+    public function testUnionTypeNoMatchThrows(): void
+    {
+        $this->expectException(DtoMapperException::class);
+        $this->expectExceptionMessage('Could not resolve union type for value of type "string"');
+
+        $this->dtoMapper->map(
+            TestUnionTypeNoMatchDto::class,
+            [
+                'value' => 'not-a-number',
+            ]
+        );
     }
 
     public function testUnitEnumValue(): void
