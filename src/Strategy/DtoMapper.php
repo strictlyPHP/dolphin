@@ -11,6 +11,7 @@ use PhpParser\Parser\Php8;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionUnionType;
 use StrictlyPHP\Dolphin\Strategy\Exception\ArrayTypeNotDeclaredException;
 use StrictlyPHP\Dolphin\Strategy\Exception\DtoMapperException;
 
@@ -44,7 +45,7 @@ class DtoMapper
 
             // Handle nullables
             if ($raw === null) {
-                if ($type instanceof ReflectionNamedType && $type->allowsNull()) {
+                if ($type !== null && $type->allowsNull()) {
                     $args[] = null;
                     continue;
                 }
@@ -53,6 +54,12 @@ class DtoMapper
                 throw new DtoMapperException(
                     sprintf("Missing non-nullable parameter '%s'", $name)
                 );
+            }
+
+            // Union type
+            if ($type instanceof ReflectionUnionType) {
+                $args[] = $this->resolveUnionType($type, $raw);
+                continue;
             }
 
             // Array type (possibly nullable)
@@ -293,6 +300,105 @@ class DtoMapper
             }
         }
         return $out;
+    }
+
+    private function resolveUnionType(ReflectionUnionType $union, mixed $raw): mixed
+    {
+        $types = $union->getTypes();
+
+        // 1. Backed enum — try each enum type via tryFrom()
+        if (is_scalar($raw)) {
+            foreach ($types as $t) {
+                if (! $t instanceof ReflectionNamedType || $t->isBuiltin()) {
+                    continue;
+                }
+                $className = $t->getName();
+                if (! enum_exists($className)) {
+                    continue;
+                }
+                $ref = new \ReflectionEnum($className);
+                if ($ref->isBacked()) {
+                    /** @var class-string<\BackedEnum> $className */
+                    $result = $className::tryFrom($raw);
+                    if ($result !== null) {
+                        return $result;
+                    }
+                }
+            }
+        }
+
+        // 2. Nested DTO — if value is array, try each non-enum class via map()
+        if (is_array($raw)) {
+            foreach ($types as $t) {
+                if (! $t instanceof ReflectionNamedType || $t->isBuiltin()) {
+                    continue;
+                }
+                $className = $t->getName();
+                if (enum_exists($className)) {
+                    continue;
+                }
+                if (class_exists($className)) {
+                    try {
+                        return $this->map($className, $raw);
+                    } catch (DtoMapperException) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // 3. Value object — if value is scalar, try each non-enum class via constructor
+        if (is_scalar($raw)) {
+            foreach ($types as $t) {
+                if (! $t instanceof ReflectionNamedType || $t->isBuiltin()) {
+                    continue;
+                }
+                $className = $t->getName();
+                if (enum_exists($className)) {
+                    continue;
+                }
+                if (class_exists($className)) {
+                    try {
+                        return (new ReflectionClass($className))->newInstanceArgs([$raw]);
+                    } catch (\ReflectionException | \TypeError | \ArgumentCountError) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // 4. Scalar fallback — if value matches a builtin type in the union
+        if (is_scalar($raw)) {
+            foreach ($types as $t) {
+                if ($t instanceof ReflectionNamedType && $t->isBuiltin() && $this->scalarMatchesBuiltin($raw, $t->getName())) {
+                    return $raw;
+                }
+            }
+        }
+
+        // 5. Array fallback
+        if (is_array($raw)) {
+            foreach ($types as $t) {
+                if ($t instanceof ReflectionNamedType && $t->isBuiltin() && $t->getName() === 'array') {
+                    return $raw;
+                }
+            }
+        }
+
+        throw new DtoMapperException(
+            sprintf('Could not resolve union type for value of type "%s"', get_debug_type($raw))
+        );
+    }
+
+    private function scalarMatchesBuiltin(mixed $value, string $typeName): bool
+    {
+        return match ($typeName) {
+            'string' => is_string($value),
+            'int' => is_int($value),
+            'float' => is_float($value),
+            'bool' => is_bool($value),
+            default => false,
+        };
     }
 
     /**
