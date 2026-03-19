@@ -16,6 +16,7 @@ use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestNullableRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestSameNamespaceDto;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestUnionTypeRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\UnitEnumRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Value\EmailAddress;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Value\PersonName;
@@ -182,6 +183,132 @@ class DtoMapperTest extends TestCase
                 'users' => [],
                 'emails' => [],
                 'statuses' => ['FOOO'],
+            ]
+        );
+    }
+
+    public function testUnionTypeScalarString(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertIsString($dto->id);
+        $this->assertSame('abc', $dto->id);
+    }
+
+    public function testUnionTypeScalarInt(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 42,
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertIsInt($dto->id);
+        $this->assertSame(42, $dto->id);
+    }
+
+    public function testUnionTypeClassOrNullWithValue(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertInstanceOf(EmailAddress::class, $dto->email);
+        $this->assertSame('a@b.com', $dto->email->value);
+    }
+
+    public function testUnionTypeClassOrNullWithNull(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => null,
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertNull($dto->email);
+    }
+
+    public function testUnionTypeEnumWinsOverScalar(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertInstanceOf(Status::class, $dto->status);
+        $this->assertSame(Status::ACTIVE, $dto->status);
+    }
+
+    public function testUnionTypeScalarFallbackWhenEnumFails(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'random',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertIsString($dto->status);
+        $this->assertSame('random', $dto->status);
+    }
+
+    public function testUnionTypeTripleNullableNull(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => 'abc',
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
+            ]
+        );
+
+        $this->assertNull($dto->optional);
+    }
+
+    public function testUnionTypeNonNullableWithNullThrows(): void
+    {
+        $this->expectException(DtoMapperException::class);
+        $this->expectExceptionMessage("Missing non-nullable parameter 'id'");
+
+        $this->dtoMapper->map(
+            TestUnionTypeRequestDto::class,
+            [
+                'id' => null,
+                'email' => 'a@b.com',
+                'status' => 'ACTIVE',
+                'optional' => null,
             ]
         );
     }
