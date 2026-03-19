@@ -197,7 +197,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -215,7 +218,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -233,7 +239,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -251,7 +260,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -268,7 +280,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -286,7 +301,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'random',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -304,7 +322,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -324,7 +345,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
     }
@@ -339,7 +363,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'test@example.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -357,7 +384,10 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['givenName' => 'John', 'familyName' => 'Doe'],
+                'metadata' => [
+                    'givenName' => 'John',
+                    'familyName' => 'Doe',
+                ],
             ]
         );
 
@@ -376,12 +406,16 @@ class DtoMapperTest extends TestCase
                 'status' => 'ACTIVE',
                 'optional' => null,
                 'contact' => 'a@b.com',
-                'metadata' => ['foo' => 'bar'],
+                'metadata' => [
+                    'foo' => 'bar',
+                ],
             ]
         );
 
         $this->assertIsArray($dto->metadata);
-        $this->assertSame(['foo' => 'bar'], $dto->metadata);
+        $this->assertSame([
+            'foo' => 'bar',
+        ], $dto->metadata);
     }
 
     public function testUnitEnumValue(): void

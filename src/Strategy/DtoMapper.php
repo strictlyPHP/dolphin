@@ -340,7 +340,7 @@ class DtoMapper
                 if (class_exists($className)) {
                     try {
                         return $this->map($className, $raw);
-                    } catch (\Throwable) {
+                    } catch (DtoMapperException) {
                         continue;
                     }
                 }
@@ -360,7 +360,7 @@ class DtoMapper
                 if (class_exists($className)) {
                     try {
                         return (new ReflectionClass($className))->newInstanceArgs([$raw]);
-                    } catch (\Throwable) {
+                    } catch (\Exception) {
                         continue;
                     }
                 }

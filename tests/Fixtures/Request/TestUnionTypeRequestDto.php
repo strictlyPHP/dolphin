@@ -10,6 +10,9 @@ use StrictlyPHP\Tests\Dolphin\Fixtures\Value\PersonName;
 
 readonly class TestUnionTypeRequestDto
 {
+    /**
+     * @param PersonName|array<string, mixed> $metadata
+     */
     public function __construct(
         public string|int $id,
         public EmailAddress|null $email,
