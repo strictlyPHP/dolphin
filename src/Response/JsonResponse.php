@@ -15,12 +15,17 @@ class JsonResponse extends Response
      */
     public function __construct(\JsonSerializable|array $body, ?int $status = StatusCodeInterface::STATUS_OK)
     {
+        $encoded = json_encode($body);
+        if ($encoded === false) {
+            throw new \RuntimeException('json_encode failed: ' . json_last_error_msg());
+        }
+
         parent::__construct(
             $status,
             new Headers([
                 'Content-Type' => 'application/json',
             ]),
-            (new StreamFactory())->createStream(json_encode($body))
+            (new StreamFactory())->createStream($encoded)
         );
     }
 }
