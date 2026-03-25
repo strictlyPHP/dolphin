@@ -97,7 +97,7 @@ class AppNamedAttributeTest extends TestCase
             'statusCode' => 200,
             'body' => '{"response":"created user foo with email roo@bar.com and name Foo Bar","vars":[],"requestBody":"{\n \"username\":\"foo\",\n \"email\": \"roo@bar.com\",\n \"name\": {\n \"givenName\": \"Foo\",\n \"familyName\": \"Bar\"\n }\n}"}',
             'headers' => [
-                'Content-Type' => ['application/json'],
+                'Content-Type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
