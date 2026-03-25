@@ -148,7 +148,7 @@ class AppTest extends TestCase
         $response = $this->app->run($event, $context);
 
         self::assertSame(500, $response['statusCode']);
-        self::assertSame('Not Found', json_decode($response['body'], true)['error']);
+        self::assertSame('Internal Server Error', json_decode($response['body'], true)['error']);
     }
 
     public function testItLogsErrorWhenExceptionIsThrownWithLogger(): void
@@ -183,7 +183,10 @@ class AppTest extends TestCase
         $response = $app->run($event, $context);
 
         self::assertSame(500, $response['statusCode']);
-        self::assertSame('Test exception', json_decode($response['body'], true)['error']);
+        $body = json_decode($response['body'], true);
+        self::assertSame('Internal Server Error', $body['error']);
+        self::assertArrayNotHasKey('message', $body);
+        self::assertArrayNotHasKey('trace', $body);
         self::assertSame('application/json', $response['headers']['Content-Type']);
 
         $logs = $logger->getLogs();
@@ -191,5 +194,44 @@ class AppTest extends TestCase
         self::assertSame('error', $logs[0]['level']);
         self::assertSame('Test exception', $logs[0]['message']);
         self::assertIsString($logs[0]['context']['trace']);
+    }
+
+    public function testItExposesErrorDetailInDebugMode(): void
+    {
+        $logger = new TestLogger();
+        $router = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                throw new \RuntimeException('Debug visible error');
+            }
+        };
+        $app = new App(
+            $router,
+            (new ContainerBuilder())->build(),
+            $logger,
+            true
+        );
+
+        $event = [
+            "http" => [
+                "path" => "/test",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $apiHost = "https://example.com";
+        };
+
+        $response = $app->run($event, $context);
+
+        self::assertSame(500, $response['statusCode']);
+        $body = json_decode($response['body'], true);
+        self::assertSame('Internal Server Error', $body['error']);
+        self::assertSame('Debug visible error', $body['message']);
+        self::assertIsString($body['trace']);
     }
 }

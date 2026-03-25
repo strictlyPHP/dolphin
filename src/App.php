@@ -29,7 +29,8 @@ class App
     public function __construct(
         private readonly RequestHandlerInterface $router,
         private readonly ContainerInterface $container,
-        private readonly ?LoggerInterface $logger = null
+        private readonly ?LoggerInterface $logger = null,
+        private readonly bool $debugMode = false
     ) {
     }
 
@@ -113,7 +114,7 @@ class App
             }
         }
 
-        return new self($router, $container, $logger);
+        return new self($router, $container, $logger, (bool) $debugMode);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -154,7 +155,7 @@ class App
 
             $headers = [];
             foreach ($response->getHeaders() as $name => $values) {
-                $headers[$name] = implode(', ', $values);
+                $headers[$name] = count($values) === 1 ? $values[0] : $values;
             }
 
             return [
@@ -162,18 +163,22 @@ class App
                 'body' => (string) $response->getBody(),
                 'headers' => $headers,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if ($this->logger) {
                 $this->logger->error($e->getMessage(), [
                     'trace' => $e->getTraceAsString(),
                 ]);
             }
 
+            $body = ['error' => 'Internal Server Error'];
+            if ($this->debugMode) {
+                $body['message'] = $e->getMessage();
+                $body['trace'] = $e->getTraceAsString();
+            }
+
             return [
                 'statusCode' => 500,
-                'body' => json_encode([
-                    'error' => $e->getMessage(),
-                ]) ?: '{"error": "Unknown error"}',
+                'body' => json_encode($body) ?: '{"error": "Internal Server Error"}',
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],
