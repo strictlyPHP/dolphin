@@ -170,7 +170,9 @@ class App
                 ]);
             }
 
-            $body = ['error' => 'Internal Server Error'];
+            $body = [
+                'error' => 'Internal Server Error',
+            ];
             if ($this->debugMode) {
                 $body['message'] = $e->getMessage();
                 $body['trace'] = $e->getTraceAsString();
