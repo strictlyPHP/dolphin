@@ -1,4 +1,5 @@
-Changelog for version 3.1.1
+Changelog for version 3.1.2
 
-- fix: throw RuntimeException when json_encode fails in JsonResponse (Ken Lalobo)
-- update readme (Ken Lalobo)
+- style: apply coding style fixes from ecs (Ken Lalobo)
+- fix: catch Throwable, hide error details from clients, add debugMode to App (Ken Lalobo)
+- fix: flatten PSR-7 headers and harden error response in App::run() (Ken Lalobo)
