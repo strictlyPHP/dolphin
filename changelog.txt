@@ -1,7 +1,4 @@
-Changelog for version 3.1.0
+Changelog for version 3.1.1
 
-- test: add coverage for union type no-match exception path (Ken Lalobo)
-- fix: narrow value object catch to specific exception types (Ken Lalobo)
-- fix: narrow catch types in union resolution and fix coding style (Ken Lalobo)
-- test: add coverage for nested DTO, value object, and array fallback union branches (Ken Lalobo)
-- feat: add union type support in DtoMapper (Ken Lalobo)
+- fix: throw RuntimeException when json_encode fails in JsonResponse (Ken Lalobo)
+- update readme (Ken Lalobo)
