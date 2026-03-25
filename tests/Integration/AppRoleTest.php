@@ -94,7 +94,7 @@ class AppRoleTest extends TestCase
             'statusCode' => 200,
             'body' => '{"response":"created user foo with email roo@bar.com and name Foo Bar","vars":[],"requestBody":"{\n \"username\":\"foo\",\n \"email\": \"roo@bar.com\",\n \"name\": {\n \"givenName\": \"Foo\",\n \"familyName\": \"Bar\"\n }\n}"}',
             'headers' => [
-                'Content-Type' => ['application/json'],
+                'Content-Type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -178,7 +178,7 @@ class AppRoleTest extends TestCase
             'statusCode' => 403,
             'body' => '{"statusCode":403,"reasonPhrase":"User does not have permission to access this resource"}',
             'headers' => [
-                'content-type' => ['application/json'],
+                'content-type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -259,7 +259,7 @@ class AppRoleTest extends TestCase
             'statusCode' => 401,
             'body' => '{"statusCode":401,"reasonPhrase":"User is not authenticated"}',
             'headers' => [
-                'content-type' => ['application/json'],
+                'content-type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);

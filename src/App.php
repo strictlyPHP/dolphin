@@ -152,23 +152,28 @@ class App
         try {
             $response = $this->router->handle($request);
 
+            $headers = [];
+            foreach ($response->getHeaders() as $name => $values) {
+                $headers[$name] = implode(', ', $values);
+            }
+
             return [
                 'statusCode' => $response->getStatusCode(),
                 'body' => (string) $response->getBody(),
-                'headers' => $response->getHeaders(),
+                'headers' => $headers,
             ];
         } catch (\Exception $e) {
             if ($this->logger) {
                 $this->logger->error($e->getMessage(), [
-                    'trace' => $e->getTrace(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
+
             return [
                 'statusCode' => 500,
                 'body' => json_encode([
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTrace(),
-                ]),
+                ]) ?: '{"error": "Unknown error"}',
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],

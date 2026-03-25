@@ -120,7 +120,7 @@ class AppAttributeTest extends TestCase
             'statusCode' => 200,
             'body' => '{"response":"created user foo with email roo@bar.com and name Foo Bar","vars":[],"requestBody":"{\n \"username\":\"foo\",\n \"email\": \"roo@bar.com\",\n \"name\": {\n \"givenName\": \"Foo\",\n \"familyName\": \"Bar\"\n }\n}"}',
             'headers' => [
-                'Content-Type' => ['application/json'],
+                'Content-Type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -179,7 +179,7 @@ class AppAttributeTest extends TestCase
             'statusCode' => 404,
             'body' => '{"statusCode":404,"reasonPhrase":"Not Found"}',
             'headers' => [
-                'content-type' => ['application/json'],
+                'content-type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -253,7 +253,7 @@ class AppAttributeTest extends TestCase
             'statusCode' => 500,
             'body' => '{"statusCode":500,"reasonPhrase":"Internal Server Error"}',
             'headers' => [
-                'content-type' => ['application/json'],
+                'content-type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -399,7 +399,7 @@ class AppAttributeTest extends TestCase
             'statusCode' => 401,
             'body' => '{"statusCode":401,"reasonPhrase":"Forced not authorised error"}',
             'headers' => [
-                'content-type' => ['application/json'],
+                'content-type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);

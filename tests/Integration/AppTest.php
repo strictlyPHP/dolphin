@@ -5,8 +5,10 @@ namespace StrictlyPHP\Tests\Dolphin\Integration;
 
 use DI\ContainerBuilder;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use StrictlyPHP\Dolphin\App;
+use StrictlyPHP\Tests\Dolphin\Fixtures\TestLogger;
 
 class AppTest extends TestCase
 {
@@ -90,7 +92,7 @@ class AppTest extends TestCase
             'statusCode' => 200,
             'body' => '{"requestBody":"{\n \"username\":\"foo\",\n \"email\": \"roo@bar.com\",\n \"name\": {\n \"givenName\": \"Foo\",\n \"familyName\": \"Bar\"\n }\n}"}',
             'headers' => [
-                'Content-Type' => ['application/json'],
+                'Content-Type' => 'application/json',
             ],
         ];
         self::assertSame($expectedResponse, $response);
@@ -147,5 +149,47 @@ class AppTest extends TestCase
 
         self::assertSame(500, $response['statusCode']);
         self::assertSame('Not Found', json_decode($response['body'], true)['error']);
+    }
+
+    public function testItLogsErrorWhenExceptionIsThrownWithLogger(): void
+    {
+        $logger = new TestLogger();
+        $router = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                throw new \RuntimeException('Test exception');
+            }
+        };
+        $app = new App(
+            $router,
+            (new ContainerBuilder())->build(),
+            $logger
+        );
+
+        $event = [
+            "http" => [
+                "path" => "/test",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $apiHost = "https://example.com";
+        };
+
+        $response = $app->run($event, $context);
+
+        self::assertSame(500, $response['statusCode']);
+        self::assertSame('Test exception', json_decode($response['body'], true)['error']);
+        self::assertSame('application/json', $response['headers']['Content-Type']);
+
+        $logs = $logger->getLogs();
+        self::assertCount(1, $logs);
+        self::assertSame('error', $logs[0]['level']);
+        self::assertSame('Test exception', $logs[0]['message']);
+        self::assertIsString($logs[0]['context']['trace']);
     }
 }
