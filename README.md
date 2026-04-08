@@ -199,6 +199,9 @@ class CustomErrorHandler implements MiddlewareInterface
             return $handler->handle($request);
         } catch (\Throwable $e) {
             // Your custom error handling logic
+            $response = (new \Slim\Psr7\Factory\ResponseFactory())->createResponse(500);
+            $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
+            return $response->withHeader('Content-Type', 'application/json');
         }
     }
 }
