@@ -31,7 +31,8 @@ class App
         private readonly RequestHandlerInterface $router,
         private readonly ContainerInterface $container,
         private readonly ?LoggerInterface $logger = null,
-        private readonly bool $debugMode = false
+        private readonly bool $debugMode = false,
+        private readonly ?\Closure $exceptionHandler = null,
     ) {
     }
 
@@ -46,7 +47,8 @@ class App
         ?bool $debugMode = false,
         ?array $middlewares = [],
         ?bool $includeRoleCheck = true,
-        ?MiddlewareInterface $throwableHandler = null
+        ?MiddlewareInterface $throwableHandler = null,
+        ?\Closure $exceptionHandler = null
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -117,7 +119,7 @@ class App
             }
         }
 
-        return new self($router, $container, $logger, (bool) $debugMode);
+        return new self($router, $container, $logger, (bool) $debugMode, $exceptionHandler);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -167,10 +169,17 @@ class App
                 'headers' => $headers,
             ];
         } catch (\Throwable $e) {
-            if ($this->logger) {
-                $this->logger->error($e->getMessage(), [
-                    'trace' => $e->getTraceAsString(),
-                ]);
+            if ($this->exceptionHandler !== null) {
+                $result = ($this->exceptionHandler)($e);
+                if (is_array($result)) {
+                    return $result;
+                }
+            } else {
+                if ($this->logger) {
+                    $this->logger->error($e->getMessage(), [
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
             }
 
             $body = [

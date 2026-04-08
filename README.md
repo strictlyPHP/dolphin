@@ -214,6 +214,27 @@ $app = App::build(
 
 Custom handlers are PSR-15 middleware implementing `MiddlewareInterface`. They are responsible for their own logging, error formatting, and configuration.
 
+### App-Level Exception Handler
+
+In addition to the route-level `throwableHandler`, you can provide an `exceptionHandler` closure to customize error handling at the application level (e.g. for errors that occur outside the middleware stack). This is useful for integrating error reporting services like Sentry, Bugsnag, or Datadog:
+
+```php
+$app = App::build(
+    controllers: ['App\Controllers'],
+    throwableHandler: new CustomErrorHandler(),        // route-level errors (PSR-15)
+    exceptionHandler: function (\Throwable $e): ?array {  // app-level safety net
+        \Sentry\captureException($e);
+        return null; // use default error response
+    },
+);
+```
+
+The `exceptionHandler` closure receives the `\Throwable` and can:
+- Return an `array` (`['statusCode' => ..., 'body' => ..., 'headers' => ...]`) to fully control the response
+- Return `null` to use the default 500 error response (logging is suppressed to avoid duplicates)
+
+When no `exceptionHandler` is provided, the existing default behavior is preserved.
+
 ### JSON Responses
 
 Use `JsonResponse` for convenience:

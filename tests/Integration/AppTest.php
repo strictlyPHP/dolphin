@@ -234,4 +234,96 @@ class AppTest extends TestCase
         self::assertSame('Debug visible error', $body['message']);
         self::assertIsString($body['trace']);
     }
+
+    public function testExceptionHandlerIsCalledAndResponseReturned(): void
+    {
+        $router = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                throw new \RuntimeException('Handled exception');
+            }
+        };
+        $app = new App(
+            $router,
+            (new ContainerBuilder())->build(),
+            null,
+            false,
+            function (\Throwable $e): array {
+                return [
+                    'statusCode' => 503,
+                    'body' => json_encode([
+                        'error' => 'Custom: ' . $e->getMessage(),
+                    ]),
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                    ],
+                ];
+            }
+        );
+
+        $event = [
+            "http" => [
+                "path" => "/test",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $apiHost = "https://example.com";
+        };
+
+        $response = $app->run($event, $context);
+
+        self::assertSame(503, $response['statusCode']);
+        $body = json_decode($response['body'], true);
+        self::assertSame('Custom: Handled exception', $body['error']);
+    }
+
+    public function testExceptionHandlerReturningNullSuppressesLoggingButUsesDefaultResponse(): void
+    {
+        $logger = new TestLogger();
+        $captured = null;
+        $router = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                throw new \RuntimeException('Captured exception');
+            }
+        };
+        $app = new App(
+            $router,
+            (new ContainerBuilder())->build(),
+            $logger,
+            false,
+            function (\Throwable $e) use (&$captured): ?array {
+                $captured = $e;
+                return null;
+            }
+        );
+
+        $event = [
+            "http" => [
+                "path" => "/test",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $apiHost = "https://example.com";
+        };
+
+        $response = $app->run($event, $context);
+
+        self::assertSame(500, $response['statusCode']);
+        $body = json_decode($response['body'], true);
+        self::assertSame('Internal Server Error', $body['error']);
+        self::assertEmpty($logger->getLogs());
+        self::assertInstanceOf(\RuntimeException::class, $captured);
+        self::assertSame('Captured exception', $captured->getMessage());
+    }
 }
