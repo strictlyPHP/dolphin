@@ -181,6 +181,36 @@ $app = App::build(
 );
 ```
 
+### Custom Throwable Handler
+
+By default, Dolphin catches all exceptions and returns JSON error responses with appropriate status codes. You can provide your own throwable handler middleware to customize this behavior:
+
+```php
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+class CustomErrorHandler implements MiddlewareInterface
+{
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        try {
+            return $handler->handle($request);
+        } catch (\Throwable $e) {
+            // Your custom error handling logic
+        }
+    }
+}
+
+$app = App::build(
+    controllers: ['App\Controllers'],
+    throwableHandler: new CustomErrorHandler(),
+);
+```
+
+Custom handlers are PSR-15 middleware implementing `MiddlewareInterface`. They are responsible for their own logging, error formatting, and configuration.
+
 ### JSON Responses
 
 Use `JsonResponse` for convenience:

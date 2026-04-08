@@ -11,6 +11,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
@@ -44,7 +45,8 @@ class App
         array $containerDefinitions = [],
         ?bool $debugMode = false,
         ?array $middlewares = [],
-        ?bool $includeRoleCheck = true
+        ?bool $includeRoleCheck = true,
+        ?MiddlewareInterface $throwableHandler = null
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -74,7 +76,8 @@ class App
             responseFactory: new ResponseFactory(),
             logger: $logger,
             debugMode: $debugMode,
-            includeRoleCheck: $includeRoleCheck
+            includeRoleCheck: $includeRoleCheck,
+            throwableHandler: $throwableHandler
         );
         $strategy->setContainer($container);
         $router = new Router();

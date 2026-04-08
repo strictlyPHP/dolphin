@@ -31,13 +31,18 @@ class DolphinAppStrategy extends JsonStrategy
         private ?LoggerInterface $logger = null,
         ?int $jsonFlags = 0,
         private ?bool $debugMode = false,
-        private ?bool $includeRoleCheck = true
+        private ?bool $includeRoleCheck = true,
+        private ?MiddlewareInterface $throwableHandler = null
     ) {
         parent::__construct($responseFactory, $jsonFlags);
     }
 
     public function getThrowableHandler(): MiddlewareInterface
     {
+        if ($this->throwableHandler !== null) {
+            return $this->throwableHandler;
+        }
+
         return new class($this->responseFactory->createResponse(), $this->logger, $this->debugMode) implements MiddlewareInterface {
             public function __construct(
                 protected ResponseInterface $response,
