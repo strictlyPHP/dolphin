@@ -31,7 +31,8 @@ class App
         private readonly RequestHandlerInterface $router,
         private readonly ContainerInterface $container,
         private readonly ?LoggerInterface $logger = null,
-        private readonly bool $debugMode = false
+        private readonly bool $debugMode = false,
+        private readonly ?\Closure $exceptionHandler = null,
     ) {
     }
 
@@ -46,7 +47,8 @@ class App
         ?bool $debugMode = false,
         ?array $middlewares = [],
         ?bool $includeRoleCheck = true,
-        ?MiddlewareInterface $throwableHandler = null
+        ?MiddlewareInterface $throwableHandler = null,
+        ?\Closure $exceptionHandler = null
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -117,7 +119,7 @@ class App
             }
         }
 
-        return new self($router, $container, $logger, (bool) $debugMode);
+        return new self($router, $container, $logger, (bool) $debugMode, $exceptionHandler);
     }
 
     public function getRouter(): RequestHandlerInterface
@@ -167,10 +169,37 @@ class App
                 'headers' => $headers,
             ];
         } catch (\Throwable $e) {
-            if ($this->logger) {
-                $this->logger->error($e->getMessage(), [
-                    'trace' => $e->getTraceAsString(),
-                ]);
+            if ($this->exceptionHandler !== null) {
+                try {
+                    $result = ($this->exceptionHandler)($e);
+                    if (
+                        is_array($result)
+                        && isset($result['statusCode'], $result['body'], $result['headers'])
+                        && is_int($result['statusCode'])
+                        && is_string($result['body'])
+                        && is_array($result['headers'])
+                    ) {
+                        return $result;
+                    }
+                    if (is_array($result) && $this->logger) {
+                        $this->logger->error('Exception handler returned malformed response', [
+                            'exception' => $e,
+                        ]);
+                    }
+                } catch (\Throwable $handlerException) {
+                    if ($this->logger) {
+                        $this->logger->error('Exception handler failed', [
+                            'exception' => $handlerException,
+                            'previous_exception' => $e,
+                        ]);
+                    }
+                }
+            } else {
+                if ($this->logger) {
+                    $this->logger->error($e->getMessage(), [
+                        'exception' => $e,
+                    ]);
+                }
             }
 
             $body = [
