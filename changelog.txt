@@ -1,5 +1,9 @@
-Changelog for version 3.1.2
+Changelog for version 3.2.0
 
-- style: apply coding style fixes from ecs (Ken Lalobo)
-- fix: catch Throwable, hide error details from clients, add debugMode to App (Ken Lalobo)
-- fix: flatten PSR-7 headers and harden error response in App::run() (Ken Lalobo)
+- refactor: use PSR-3 exception key in default error logging path (Ken Lalobo)
+- fix: validate exceptionHandler response shape before returning (Ken Lalobo)
+- refactor: pass exception objects in log context per PSR-3 (Ken Lalobo)
+- fix: wrap exceptionHandler call in try/catch to prevent escape (Ken Lalobo)
+- feat: add app-level exceptionHandler for error reporting integrations (Ken Lalobo)
+- fix: complete README example return type and add strategy unit tests (Ken Lalobo)
+- feat: support custom throwable handler middleware in App::build() (Ken Lalobo)
