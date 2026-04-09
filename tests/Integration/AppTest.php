@@ -193,7 +193,7 @@ class AppTest extends TestCase
         self::assertCount(1, $logs);
         self::assertSame('error', $logs[0]['level']);
         self::assertSame('Test exception', $logs[0]['message']);
-        self::assertIsString($logs[0]['context']['trace']);
+        self::assertInstanceOf(\RuntimeException::class, $logs[0]['context']['exception']);
     }
 
     public function testItExposesErrorDetailInDebugMode(): void

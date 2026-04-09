@@ -197,7 +197,7 @@ class App
             } else {
                 if ($this->logger) {
                     $this->logger->error($e->getMessage(), [
-                        'trace' => $e->getTraceAsString(),
+                        'exception' => $e,
                     ]);
                 }
             }
