@@ -326,4 +326,51 @@ class AppTest extends TestCase
         self::assertInstanceOf(\RuntimeException::class, $captured);
         self::assertSame('Captured exception', $captured->getMessage());
     }
+
+    public function testExceptionHandlerThrowingReturnsDefaultResponseAndLogs(): void
+    {
+        $logger = new TestLogger();
+        $router = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                throw new \RuntimeException('Original error');
+            }
+        };
+        $app = new App(
+            $router,
+            (new ContainerBuilder())->build(),
+            $logger,
+            false,
+            function (\Throwable $e): ?array {
+                throw new \RuntimeException('Handler blew up');
+            }
+        );
+
+        $event = [
+            "http" => [
+                "path" => "/test",
+                "body" => "",
+                "isBase64Encoded" => false,
+                "queryString" => "",
+                "method" => "GET",
+                "headers" => [],
+            ],
+        ];
+        $context = new class() {
+            public string $apiHost = "https://example.com";
+        };
+
+        $response = $app->run($event, $context);
+
+        self::assertSame(500, $response['statusCode']);
+        $body = json_decode($response['body'], true);
+        self::assertSame('Internal Server Error', $body['error']);
+
+        $logs = $logger->getLogs();
+        self::assertCount(1, $logs);
+        self::assertSame('error', $logs[0]['level']);
+        self::assertSame('Exception handler failed', $logs[0]['message']);
+        self::assertSame('Handler blew up', $logs[0]['context']['handler_error']);
+        self::assertSame('Original error', $logs[0]['context']['original_error']);
+    }
 }

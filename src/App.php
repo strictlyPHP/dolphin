@@ -170,9 +170,19 @@ class App
             ];
         } catch (\Throwable $e) {
             if ($this->exceptionHandler !== null) {
-                $result = ($this->exceptionHandler)($e);
-                if (is_array($result)) {
-                    return $result;
+                try {
+                    $result = ($this->exceptionHandler)($e);
+                    if (is_array($result)) {
+                        return $result;
+                    }
+                } catch (\Throwable $handlerException) {
+                    if ($this->logger) {
+                        $this->logger->error('Exception handler failed', [
+                            'handler_error' => $handlerException->getMessage(),
+                            'original_error' => $e->getMessage(),
+                            'trace' => $handlerException->getTraceAsString(),
+                        ]);
+                    }
                 }
             } else {
                 if ($this->logger) {
