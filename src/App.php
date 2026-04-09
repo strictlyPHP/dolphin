@@ -172,8 +172,19 @@ class App
             if ($this->exceptionHandler !== null) {
                 try {
                     $result = ($this->exceptionHandler)($e);
-                    if (is_array($result)) {
+                    if (
+                        is_array($result)
+                        && isset($result['statusCode'], $result['body'], $result['headers'])
+                        && is_int($result['statusCode'])
+                        && is_string($result['body'])
+                        && is_array($result['headers'])
+                    ) {
                         return $result;
+                    }
+                    if (is_array($result) && $this->logger) {
+                        $this->logger->error('Exception handler returned malformed response', [
+                            'exception' => $e,
+                        ]);
                     }
                 } catch (\Throwable $handlerException) {
                     if ($this->logger) {
