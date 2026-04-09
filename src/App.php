@@ -178,9 +178,8 @@ class App
                 } catch (\Throwable $handlerException) {
                     if ($this->logger) {
                         $this->logger->error('Exception handler failed', [
-                            'handler_error' => $handlerException->getMessage(),
-                            'original_error' => $e->getMessage(),
-                            'trace' => $handlerException->getTraceAsString(),
+                            'exception' => $handlerException,
+                            'previous_exception' => $e,
                         ]);
                     }
                 }

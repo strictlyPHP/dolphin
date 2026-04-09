@@ -370,7 +370,9 @@ class AppTest extends TestCase
         self::assertCount(1, $logs);
         self::assertSame('error', $logs[0]['level']);
         self::assertSame('Exception handler failed', $logs[0]['message']);
-        self::assertSame('Handler blew up', $logs[0]['context']['handler_error']);
-        self::assertSame('Original error', $logs[0]['context']['original_error']);
+        self::assertInstanceOf(\RuntimeException::class, $logs[0]['context']['exception']);
+        self::assertSame('Handler blew up', $logs[0]['context']['exception']->getMessage());
+        self::assertInstanceOf(\RuntimeException::class, $logs[0]['context']['previous_exception']);
+        self::assertSame('Original error', $logs[0]['context']['previous_exception']->getMessage());
     }
 }
