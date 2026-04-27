@@ -65,11 +65,10 @@ class DolphinAppStrategy extends JsonStrategy
                         $message = $exception->getMessage();
                         if ($this->logger) {
                             $this->logger->warning(
-                                $message,
+                                $exception->getMessage(),
                                 [
-                                    'message' => $exception->getMessage(),
+                                    'exception' => $exception,
                                     'request' => (string) $request->getBody(),
-                                    'trace' => $exception->getTrace(),
                                 ]
                             );
                         }
@@ -78,11 +77,10 @@ class DolphinAppStrategy extends JsonStrategy
                         $message = 'Internal Server Error';
                         if ($this->logger) {
                             $this->logger->critical(
-                                $message,
+                                $exception->getMessage(),
                                 [
-                                    'message' => $exception->getMessage(),
+                                    'exception' => $exception,
                                     'request' => (string) $request->getBody(),
-                                    'trace' => $exception->getTrace(),
                                 ]
                             );
                         }
@@ -230,11 +228,10 @@ class DolphinAppStrategy extends JsonStrategy
                 $message = $this->exception->getMessage();
                 if ($this->logger) {
                     $this->logger->warning(
-                        $message,
+                        $this->exception->getMessage(),
                         [
-                            'message' => $this->exception->getMessage(),
+                            'exception' => $this->exception,
                             'request' => (string) $request->getBody(),
-                            'trace' => $this->exception->getTrace(),
                         ]
                     );
                 }
