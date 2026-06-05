@@ -21,6 +21,7 @@ use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request;
 use StrictlyPHP\Dolphin\Attributes\Route;
+use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Strategy\DolphinAppStrategy;
 use StrictlyPHP\Dolphin\Strategy\DtoMapper;
@@ -73,13 +74,18 @@ class App
             $container->set(LoggerInterface::class, $logger);
         }
 
+        $authorizationService = $container->has(AuthorizationServiceInterface::class)
+            ? $container->get(AuthorizationServiceInterface::class)
+            : null;
+
         $strategy = new DolphinAppStrategy(
             dtoMapper: new DtoMapper(),
             responseFactory: new ResponseFactory(),
             logger: $logger,
             debugMode: $debugMode,
             includeRoleCheck: $includeRoleCheck,
-            throwableHandler: $throwableHandler
+            throwableHandler: $throwableHandler,
+            authorizationService: $authorizationService
         );
         $strategy->setContainer($container);
         $router = new Router();

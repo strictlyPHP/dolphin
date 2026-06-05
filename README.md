@@ -144,6 +144,70 @@ class AuthMiddleware implements MiddlewareInterface
 
 The `AuthenticatedUserInterface` requires `getId(): string` and `getRoles(): array`.
 
+`#[RequiresRoles]` also accepts enum cases implementing `RoleInterface` (alongside plain strings) — they are normalised to their backing string values:
+
+```php
+#[RequiresRoles([UserRole::ADMIN, 'SUPPORT'])]
+class UpdateSettingsController { /* ... */ }
+```
+
+### Permission-Based Access Control
+
+For finer-grained authorisation, protect controllers with `#[RequiresPermission]`. Dolphin owns the vocabulary and the attribute-driven enforcement; the authorisation policy itself lives in your app.
+
+1. Define enums for your user families and permissions using the marker interfaces:
+
+```php
+use StrictlyPHP\Dolphin\Authorization\PermissionInterface;
+use StrictlyPHP\Dolphin\Authorization\RoleInterface;
+
+enum UserKind: string implements RoleInterface
+{
+    case RECRUITER = 'RECRUITER';
+    case CLIENT = 'CLIENT';
+}
+
+enum RecruiterPermission: string implements PermissionInterface
+{
+    case CREATE_VACANCY = 'CREATE_VACANCY';
+    case DELETE_VACANCY = 'DELETE_VACANCY';
+}
+```
+
+2. Implement `AuthorizationServiceInterface` with your app's policy (matrix lookups, bypass rules for back-office roles, etc.) and bind it in the container:
+
+```php
+use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
+
+$app = App::build(
+    controllers: ['App\Controllers'],
+    containerDefinitions: [
+        AuthorizationServiceInterface::class => fn() => new MyAuthorizationService(),
+    ],
+    middlewares: [AuthMiddleware::class], // sets the 'user' request attribute
+);
+```
+
+3. Decorate route handlers:
+
+```php
+#[Route(Method::POST, '/vacancies')]
+#[RequiresPermission(UserKind::RECRUITER, RecruiterPermission::CREATE_VACANCY)]
+class CreateVacancyController { /* ... */ }
+```
+
+The framework calls `isAllowed($user, $userKind, $permission)` before invoking the controller and returns `403 Forbidden` when it returns `false` (or `401 Unauthorized` when no user is on the request).
+
+The attribute is repeatable with ANY-of (logical OR) semantics — the user needs at least one of the listed permissions:
+
+```php
+#[RequiresPermission(UserKind::RECRUITER, RecruiterPermission::DELETE_VACANCY)]
+#[RequiresPermission(UserKind::CLIENT, ClientPermission::DELETE_VACANCY)]
+class DeleteVacancyController { /* ... */ }
+```
+
+If a controller declares `#[RequiresPermission]` but no `AuthorizationServiceInterface` is bound, the framework throws a `RuntimeException` — a misconfigured app fails loudly rather than silently allowing or denying.
+
 ### Dependency Injection
 
 Dolphin uses [PHP-DI](https://php-di.org/) for dependency injection. Pass container definitions to `App::build()`:

@@ -19,8 +19,10 @@ use Psr\Log\LoggerInterface;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
+use StrictlyPHP\Dolphin\Attributes\RequiresPermission;
 use StrictlyPHP\Dolphin\Attributes\RequiresRoles;
 use StrictlyPHP\Dolphin\Authentication\AuthenticatedUserInterface;
+use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
 use Throwable;
 
 class DolphinAppStrategy extends JsonStrategy
@@ -32,7 +34,8 @@ class DolphinAppStrategy extends JsonStrategy
         ?int $jsonFlags = 0,
         private ?bool $debugMode = false,
         private ?bool $includeRoleCheck = true,
-        private ?MiddlewareInterface $throwableHandler = null
+        private ?MiddlewareInterface $throwableHandler = null,
+        private ?AuthorizationServiceInterface $authorizationService = null
     ) {
         parent::__construct($responseFactory, $jsonFlags);
     }
@@ -158,6 +161,53 @@ class DolphinAppStrategy extends JsonStrategy
 
                 // Intersect the required roles with the user roles
                 if (empty(array_intersect($user->getRoles(), $requiredRoles))) {
+                    throw new ForbiddenException(
+                        'User does not have permission to access this resource'
+                    );
+                }
+            }
+
+            // ----------------------------------------------
+            // PERMISSION ENFORCEMENT
+            // ----------------------------------------------
+            $permissionAttrs = $ref->getDeclaringClass()->getAttributes(RequiresPermission::class);
+            if (! empty($permissionAttrs)) {
+                if ($this->authorizationService === null) {
+                    throw new \RuntimeException(
+                        'Route handler declares #[RequiresPermission] but no AuthorizationServiceInterface is bound. ' .
+                        'Inject one into DolphinAppStrategy.'
+                    );
+                }
+
+                $user = $request->getAttribute('user');
+
+                if (! $user) {
+                    throw new UnauthorizedException(
+                        'User is not authenticated'
+                    );
+                }
+
+                if (! $user instanceof AuthenticatedUserInterface) {
+                    throw new \RuntimeException(
+                        sprintf('Authenticated user must implement %s', AuthenticatedUserInterface::class)
+                    );
+                }
+
+                // ANY-of semantics: the user needs at least one of the listed permissions
+                $allowed = false;
+                foreach ($permissionAttrs as $permissionAttr) {
+                    $requiresPermission = $permissionAttr->newInstance();
+                    if ($this->authorizationService->isAllowed(
+                        $user,
+                        $requiresPermission->userKind,
+                        $requiresPermission->permission
+                    )) {
+                        $allowed = true;
+                        break;
+                    }
+                }
+
+                if (! $allowed) {
                     throw new ForbiddenException(
                         'User does not have permission to access this resource'
                     );
