@@ -27,6 +27,7 @@ src/
 │   └── JsonResponse.php             # Convenience class for JSON responses
 └── Strategy/
     ├── DolphinAppStrategy.php       # Custom routing strategy (DI, DTO mapping, RBAC)
+    ├── AccessControlEnforcer.php    # RequiresRoles/RequiresPermission enforcement
     ├── DtoMapper.php                # Reflection-based JSON-to-DTO mapper
     └── Exception/
         ├── DtoMapperException.php
@@ -94,9 +95,9 @@ The central class with two responsibilities:
 
 Extends League Route's `JsonStrategy` to add:
 
-- **Role-based access control** — Reads `#[RequiresRoles]` attributes from the matched controller class. If roles are required, it looks for an `AuthenticatedUserInterface` on the request's `user` attribute (typically set by middleware). Throws `401 Unauthorized` if no user is present, or `403 Forbidden` if the user lacks the required roles.
+- **Role-based access control** (via `AccessControlEnforcer`) — Reads `#[RequiresRoles]` attributes from the matched controller class. If roles are required, it looks for an `AuthenticatedUserInterface` on the request's `user` attribute (typically set by middleware). Throws `401 Unauthorized` if no user is present, or `403 Forbidden` if the user lacks the required roles.
 
-- **Permission-based access control** — Reads repeatable `#[RequiresPermission]` attributes (after role enforcement) and delegates the decision to the app-bound `AuthorizationServiceInterface`, resolved from the container by `App::build()`. Multiple attributes mean ANY-of: the route passes if any one permission is allowed. Throws `403 Forbidden` when all are denied, and a `RuntimeException` when the attribute is present but no service is bound — misconfiguration fails loudly.
+- **Permission-based access control** (via `AccessControlEnforcer`) — Reads repeatable `#[RequiresPermission]` attributes (after role enforcement) and delegates the decision to the app-bound `AuthorizationServiceInterface`, resolved from the container by `App::build()`. Multiple attributes mean ANY-of: the route passes if any one permission is allowed. Throws `403 Forbidden` when all are denied, and a `RuntimeException` when the attribute is present but no service is bound — misconfiguration fails loudly.
 
 - **Automatic parameter injection** — Inspects the controller's `__invoke` parameters via reflection and injects:
   - `ServerRequestInterface` — the PSR-7 request
