@@ -163,14 +163,14 @@ use StrictlyPHP\Dolphin\Authorization\RoleInterface;
 
 enum UserKind: string implements RoleInterface
 {
-    case RECRUITER = 'RECRUITER';
-    case CLIENT = 'CLIENT';
+    case USER = 'USER';
+    case ADMIN = 'ADMIN';
 }
 
-enum RecruiterPermission: string implements PermissionInterface
+enum AdminPermission: string implements PermissionInterface
 {
-    case CREATE_VACANCY = 'CREATE_VACANCY';
-    case DELETE_VACANCY = 'DELETE_VACANCY';
+    case CREATE_REPORT = 'CREATE_REPORT';
+    case DELETE_REPORT = 'DELETE_REPORT';
 }
 ```
 
@@ -191,9 +191,9 @@ $app = App::build(
 3. Decorate route handlers:
 
 ```php
-#[Route(Method::POST, '/vacancies')]
-#[RequiresPermission(UserKind::RECRUITER, RecruiterPermission::CREATE_VACANCY)]
-class CreateVacancyController { /* ... */ }
+#[Route(Method::POST, '/reports')]
+#[RequiresPermission(UserKind::ADMIN, AdminPermission::CREATE_REPORT)]
+class CreateReportController { /* ... */ }
 ```
 
 The framework calls `isAllowed($user, $userKind, $permission)` before invoking the controller and returns `403 Forbidden` when it returns `false` (or `401 Unauthorized` when no user is on the request).
@@ -201,9 +201,9 @@ The framework calls `isAllowed($user, $userKind, $permission)` before invoking t
 The attribute is repeatable with ANY-of (logical OR) semantics — the user needs at least one of the listed permissions:
 
 ```php
-#[RequiresPermission(UserKind::RECRUITER, RecruiterPermission::DELETE_VACANCY)]
-#[RequiresPermission(UserKind::CLIENT, ClientPermission::DELETE_VACANCY)]
-class DeleteVacancyController { /* ... */ }
+#[RequiresPermission(UserKind::ADMIN, AdminPermission::DELETE_REPORT)]
+#[RequiresPermission(UserKind::USER, UserPermission::DELETE_REPORT)]
+class DeleteReportController { /* ... */ }
 ```
 
 If a controller declares `#[RequiresPermission]` but no `AuthorizationServiceInterface` is bound, the framework throws a `RuntimeException` — a misconfigured app fails loudly rather than silently allowing or denying.
