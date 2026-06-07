@@ -1,3 +1,7 @@
-Changelog for version 3.2.1
+Changelog for version 3.3.0
 
-- refactor: pass exception objects in strategy log context per PSR-3 (Ken Lalobo)
+- feat: expose required_permissions request attribute (Ken Lalobo)
+- fix: address CI failure and review comments (Ken Lalobo)
+- refactor: extract role and permission enforcement into AccessControlEnforcer (Ken Lalobo)
+- docs: use generic users/admins examples instead of recruiters/clients (Ken Lalobo)
+- feat: RequiresPermission attribute + RoleInterface/PermissionInterface markers + RequiresRoles enum support (Ken Lalobo)
