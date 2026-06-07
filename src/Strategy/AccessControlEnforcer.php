@@ -27,16 +27,16 @@ class AccessControlEnforcer
 
     /**
      * Runs role enforcement first, then permission enforcement.
-     * Returns the request with the 'required_roles' attribute set.
+     * Returns the request with the 'required_roles' and 'required_permissions'
+     * attributes set.
      */
     public function enforce(
         ReflectionMethod|ReflectionFunction $ref,
         ServerRequestInterface $request
     ): ServerRequestInterface {
         $request = $this->enforceRoles($ref, $request);
-        $this->enforcePermissions($ref, $request);
 
-        return $request;
+        return $this->enforcePermissions($ref, $request);
     }
 
     private function enforceRoles(
@@ -72,15 +72,20 @@ class AccessControlEnforcer
     private function enforcePermissions(
         ReflectionMethod|ReflectionFunction $ref,
         ServerRequestInterface $request
-    ): void {
-        if (! $ref instanceof ReflectionMethod) {
-            // Function handlers have no declaring class to carry attributes
-            return;
-        }
+    ): ServerRequestInterface {
+        $requiredPermissions = [];
 
-        $permissionAttrs = $ref->getDeclaringClass()->getAttributes(RequiresPermission::class);
-        if (empty($permissionAttrs)) {
-            return;
+        // Class-level attributes (function handlers have no declaring class)
+        if ($ref instanceof ReflectionMethod) {
+            $permissionAttrs = $ref->getDeclaringClass()->getAttributes(RequiresPermission::class);
+            foreach ($permissionAttrs as $permissionAttr) {
+                $requiredPermissions[] = $permissionAttr->newInstance();
+            }
+        }
+        $request = $request->withAttribute('required_permissions', $requiredPermissions);
+
+        if (empty($requiredPermissions)) {
+            return $request;
         }
 
         if ($this->authorizationService === null) {
@@ -94,8 +99,7 @@ class AccessControlEnforcer
 
         // ANY-of semantics: the user needs at least one of the listed permissions
         $allowed = false;
-        foreach ($permissionAttrs as $permissionAttr) {
-            $requiresPermission = $permissionAttr->newInstance();
+        foreach ($requiredPermissions as $requiresPermission) {
             if ($this->authorizationService->isAllowed(
                 $user,
                 $requiresPermission->userKind,
@@ -111,6 +115,8 @@ class AccessControlEnforcer
                 'User does not have permission to access this resource'
             );
         }
+
+        return $request;
     }
 
     private function getAuthenticatedUser(ServerRequestInterface $request): AuthenticatedUserInterface
