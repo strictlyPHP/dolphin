@@ -45,11 +45,13 @@ class AccessControlEnforcer
     ): ServerRequestInterface {
         $requiredRoles = [];
 
-        // Class-level attributes
-        $classAttrs = $ref->getDeclaringClass()->getAttributes(RequiresRoles::class);
-        if (! empty($classAttrs)) {
-            $instance = $classAttrs[0]->newInstance();
-            $requiredRoles = array_merge($requiredRoles, $instance->roles);
+        // Class-level attributes (function handlers have no declaring class)
+        if ($ref instanceof ReflectionMethod) {
+            $classAttrs = $ref->getDeclaringClass()->getAttributes(RequiresRoles::class);
+            if (! empty($classAttrs)) {
+                $instance = $classAttrs[0]->newInstance();
+                $requiredRoles = array_merge($requiredRoles, $instance->roles);
+            }
         }
         $request = $request->withAttribute('required_roles', $requiredRoles);
 
@@ -71,6 +73,11 @@ class AccessControlEnforcer
         ReflectionMethod|ReflectionFunction $ref,
         ServerRequestInterface $request
     ): void {
+        if (! $ref instanceof ReflectionMethod) {
+            // Function handlers have no declaring class to carry attributes
+            return;
+        }
+
         $permissionAttrs = $ref->getDeclaringClass()->getAttributes(RequiresPermission::class);
         if (empty($permissionAttrs)) {
             return;

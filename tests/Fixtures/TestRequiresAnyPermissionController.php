@@ -11,11 +11,11 @@ use StrictlyPHP\Dolphin\Attributes\Route;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Response\JsonResponse;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\TestPermission;
-use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserKind;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserType;
 
 #[Route(method: Method::POST, path: '/any-permission')]
-#[RequiresPermission(userKind: UserKind::ADMIN, permission: TestPermission::DELETE_USER)]
-#[RequiresPermission(userKind: UserKind::USER, permission: TestPermission::CREATE_USER)]
+#[RequiresPermission(userKind: UserType::ADMIN, permission: TestPermission::DELETE_USER)]
+#[RequiresPermission(userKind: UserType::USER, permission: TestPermission::CREATE_USER)]
 class TestRequiresAnyPermissionController
 {
     public function __invoke(ServerRequestInterface $request): ResponseInterface

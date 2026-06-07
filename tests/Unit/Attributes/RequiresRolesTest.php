@@ -6,7 +6,7 @@ namespace StrictlyPHP\Tests\Dolphin\Unit\Attributes;
 
 use PHPUnit\Framework\TestCase;
 use StrictlyPHP\Dolphin\Attributes\RequiresRoles;
-use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserKind;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserType;
 
 class RequiresRolesTest extends TestCase
 {
@@ -19,14 +19,14 @@ class RequiresRolesTest extends TestCase
 
     public function testItNormalisesRoleInterfaceEnumCasesToStrings(): void
     {
-        $attribute = new RequiresRoles([UserKind::ADMIN, UserKind::USER]);
+        $attribute = new RequiresRoles([UserType::ADMIN, UserType::USER]);
 
         $this->assertSame(['ADMIN', 'USER'], $attribute->roles);
     }
 
     public function testItAcceptsMixedStringsAndEnumCases(): void
     {
-        $attribute = new RequiresRoles(['SUPPORT', UserKind::ADMIN]);
+        $attribute = new RequiresRoles(['SUPPORT', UserType::ADMIN]);
 
         $this->assertSame(['SUPPORT', 'ADMIN'], $attribute->roles);
     }

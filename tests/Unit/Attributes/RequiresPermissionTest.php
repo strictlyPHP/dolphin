@@ -7,18 +7,18 @@ namespace StrictlyPHP\Tests\Dolphin\Unit\Attributes;
 use PHPUnit\Framework\TestCase;
 use StrictlyPHP\Dolphin\Attributes\RequiresPermission;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\TestPermission;
-use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserKind;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\UserType;
 
 class RequiresPermissionTest extends TestCase
 {
     public function testRequiresPermissionAttribute(): void
     {
         $attribute = new RequiresPermission(
-            UserKind::ADMIN,
+            UserType::ADMIN,
             TestPermission::CREATE_USER
         );
 
-        $this->assertSame(UserKind::ADMIN, $attribute->userKind);
+        $this->assertSame(UserType::ADMIN, $attribute->userKind);
         $this->assertSame(TestPermission::CREATE_USER, $attribute->permission);
     }
 }

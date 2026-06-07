@@ -16,7 +16,7 @@ For a detailed look at the internals, see [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Installation
 
 ```bash
-composer require strictlyphp/dolphin:^3.0
+composer require strictlyphp/dolphpin:^3.0
 ```
 
 ## Quick Start
