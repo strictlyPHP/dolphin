@@ -6,8 +6,6 @@ namespace StrictlyPHP\Dolphin\Strategy;
 
 use League\Route\Http;
 use League\Route\Http\Exception\BadRequestException;
-use League\Route\Http\Exception\ForbiddenException;
-use League\Route\Http\Exception\UnauthorizedException;
 use League\Route\Route;
 use League\Route\Strategy\JsonStrategy;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -19,12 +17,13 @@ use Psr\Log\LoggerInterface;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
-use StrictlyPHP\Dolphin\Attributes\RequiresRoles;
-use StrictlyPHP\Dolphin\Authentication\AuthenticatedUserInterface;
+use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
 use Throwable;
 
 class DolphinAppStrategy extends JsonStrategy
 {
+    private AccessControlEnforcer $accessControlEnforcer;
+
     public function __construct(
         private DtoMapper $dtoMapper,
         ResponseFactoryInterface $responseFactory,
@@ -32,9 +31,11 @@ class DolphinAppStrategy extends JsonStrategy
         ?int $jsonFlags = 0,
         private ?bool $debugMode = false,
         private ?bool $includeRoleCheck = true,
-        private ?MiddlewareInterface $throwableHandler = null
+        private ?MiddlewareInterface $throwableHandler = null,
+        ?AuthorizationServiceInterface $authorizationService = null
     ) {
         parent::__construct($responseFactory, $jsonFlags);
+        $this->accessControlEnforcer = new AccessControlEnforcer($authorizationService);
     }
 
     public function getThrowableHandler(): MiddlewareInterface
@@ -124,45 +125,7 @@ class DolphinAppStrategy extends JsonStrategy
         }
 
         if ($this->includeRoleCheck) {
-            // ----------------------------------------------
-            // ROLE ATTRIBUTE EXTRACTION
-            // ----------------------------------------------
-            $requiredRoles = [];
-
-            // Class-level attributes
-            $classAttrs = $ref->getDeclaringClass()->getAttributes(RequiresRoles::class);
-            if (! empty($classAttrs)) {
-                $instance = $classAttrs[0]->newInstance();
-                $requiredRoles = array_merge($requiredRoles, $instance->roles);
-            }
-            $request = $request->withAttribute('required_roles', $requiredRoles);
-
-            // ----------------------------------------------
-            // ROLE ENFORCEMENT
-            // ----------------------------------------------
-            if (! empty($requiredRoles)) {
-                // Your auth system sets this earlier in global middleware
-                $user = $request->getAttribute('user');
-
-                if (! $user) {
-                    throw new UnauthorizedException(
-                        'User is not authenticated'
-                    );
-                }
-
-                if (! $user instanceof AuthenticatedUserInterface) {
-                    throw new \RuntimeException(
-                        sprintf('Authenticated user must implement %s', AuthenticatedUserInterface::class)
-                    );
-                }
-
-                // Intersect the required roles with the user roles
-                if (empty(array_intersect($user->getRoles(), $requiredRoles))) {
-                    throw new ForbiddenException(
-                        'User does not have permission to access this resource'
-                    );
-                }
-            }
+            $request = $this->accessControlEnforcer->enforce($ref, $request);
         }
 
         $parameters = $ref->getParameters();
