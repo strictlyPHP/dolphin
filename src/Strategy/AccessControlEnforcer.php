@@ -9,14 +9,16 @@ use League\Route\Http\Exception\UnauthorizedException;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionFunction;
 use ReflectionMethod;
+use StrictlyPHP\Dolphin\Attributes\AllowsRole;
 use StrictlyPHP\Dolphin\Attributes\RequiresPermission;
+use StrictlyPHP\Dolphin\Attributes\RequiresRole;
 use StrictlyPHP\Dolphin\Attributes\RequiresRoles;
 use StrictlyPHP\Dolphin\Authentication\AuthenticatedUserInterface;
 use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
 
 /**
- * Enforces #[RequiresRoles] and #[RequiresPermission] attributes declared
- * on a matched route handler.
+ * Enforces #[RequiresRoles], #[RequiresRole], #[RequiresPermission] and
+ * #[AllowsRole] attributes declared on a matched route handler.
  */
 class AccessControlEnforcer
 {
@@ -26,36 +28,45 @@ class AccessControlEnforcer
     }
 
     /**
-     * Runs role enforcement first, then permission enforcement.
-     * Returns the request with the 'required_roles' and 'required_permissions'
-     * attributes set.
+     * Runs role enforcement first, then permission enforcement. A user holding
+     * an #[AllowsRole] role bypasses both gates. Returns the request with the
+     * 'required_roles' and 'required_permissions' attributes set.
      */
     public function enforce(
         ReflectionMethod|ReflectionFunction $ref,
         ServerRequestInterface $request
     ): ServerRequestInterface {
-        $request = $this->enforceRoles($ref, $request);
+        // #[AllowsRole] is purely additive: a user holding one of the allowed
+        // roles passes regardless of the role/permission gates below.
+        $bypass = $this->hasAllowingRole($ref, $request);
 
-        return $this->enforcePermissions($ref, $request);
+        $request = $this->enforceRoles($ref, $request, $bypass);
+
+        return $this->enforcePermissions($ref, $request, $bypass);
     }
 
     private function enforceRoles(
         ReflectionMethod|ReflectionFunction $ref,
-        ServerRequestInterface $request
+        ServerRequestInterface $request,
+        bool $bypass
     ): ServerRequestInterface {
         $requiredRoles = [];
 
         // Class-level attributes (function handlers have no declaring class)
         if ($ref instanceof ReflectionMethod) {
-            $classAttrs = $ref->getDeclaringClass()->getAttributes(RequiresRoles::class);
-            if (! empty($classAttrs)) {
-                $instance = $classAttrs[0]->newInstance();
-                $requiredRoles = array_merge($requiredRoles, $instance->roles);
+            $class = $ref->getDeclaringClass();
+
+            foreach ($class->getAttributes(RequiresRoles::class) as $rolesAttr) {
+                $requiredRoles = array_merge($requiredRoles, $rolesAttr->newInstance()->roles);
+            }
+
+            foreach ($class->getAttributes(RequiresRole::class) as $roleAttr) {
+                $requiredRoles[] = (string) $roleAttr->newInstance()->role->value;
             }
         }
         $request = $request->withAttribute('required_roles', $requiredRoles);
 
-        if (! empty($requiredRoles)) {
+        if (! empty($requiredRoles) && ! $bypass) {
             $user = $this->getAuthenticatedUser($request);
 
             // Intersect the required roles with the user roles
@@ -71,7 +82,8 @@ class AccessControlEnforcer
 
     private function enforcePermissions(
         ReflectionMethod|ReflectionFunction $ref,
-        ServerRequestInterface $request
+        ServerRequestInterface $request,
+        bool $bypass
     ): ServerRequestInterface {
         $requiredPermissions = [];
 
@@ -84,7 +96,7 @@ class AccessControlEnforcer
         }
         $request = $request->withAttribute('required_permissions', $requiredPermissions);
 
-        if (empty($requiredPermissions)) {
+        if (empty($requiredPermissions) || $bypass) {
             return $request;
         }
 
@@ -117,6 +129,36 @@ class AccessControlEnforcer
         }
 
         return $request;
+    }
+
+    /**
+     * True when the request carries an authenticated user holding one of the
+     * route's #[AllowsRole] roles. Non-throwing: an absent or wrong-typed user
+     * simply yields false, leaving the gates to raise the appropriate error.
+     */
+    private function hasAllowingRole(
+        ReflectionMethod|ReflectionFunction $ref,
+        ServerRequestInterface $request
+    ): bool {
+        if (! $ref instanceof ReflectionMethod) {
+            return false;
+        }
+
+        $allowedRoles = [];
+        foreach ($ref->getDeclaringClass()->getAttributes(AllowsRole::class) as $allowsRoleAttr) {
+            $allowedRoles[] = (string) $allowsRoleAttr->newInstance()->role->value;
+        }
+
+        if (empty($allowedRoles)) {
+            return false;
+        }
+
+        $user = $request->getAttribute('user');
+        if (! $user instanceof AuthenticatedUserInterface) {
+            return false;
+        }
+
+        return ! empty(array_intersect($user->getRoles(), $allowedRoles));
     }
 
     private function getAuthenticatedUser(ServerRequestInterface $request): AuthenticatedUserInterface

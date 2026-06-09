@@ -151,6 +151,14 @@ The `AuthenticatedUserInterface` requires `getId(): string` and `getRoles(): arr
 class UpdateSettingsController { /* ... */ }
 ```
 
+`#[RequiresRole]` is an enum-only, repeatable alternative. Each instance contributes one role, and multiple instances combine with ANY-of (logical OR) semantics — equivalent to the array form above but without the brackets:
+
+```php
+#[RequiresRole(UserRole::ADMIN)]
+#[RequiresRole(UserRole::SUPPORT)]   // ADMIN or SUPPORT
+class UpdateSettingsController { /* ... */ }
+```
+
 ### Permission-Based Access Control
 
 For finer-grained authorisation, protect controllers with `#[RequiresPermission]`. Dolphin owns the vocabulary and the attribute-driven enforcement; the authorisation policy itself lives in your app.
@@ -207,6 +215,23 @@ class DeleteReportController { /* ... */ }
 ```
 
 If a controller declares `#[RequiresPermission]` but no `AuthorizationServiceInterface` is bound, the framework throws a `RuntimeException` — a misconfigured app fails loudly rather than silently allowing or denying.
+
+#### Allowing a role through a permission gate
+
+`#[AllowsRole]` widens access: a user holding one of the listed roles passes regardless of the `#[RequiresPermission]` (or `#[RequiresRole]`) gates on the same controller, and the permission check — including the `AuthorizationServiceInterface` call — is skipped for them. Use it to gate a route on a fine-grained permission while letting a back-office role straight through:
+
+```php
+#[Route(Method::POST, '/reports')]
+#[RequiresPermission(UserKind::USER, UserPermission::CREATE_REPORT)]
+#[AllowsRole(UserKind::ADMIN)]
+class CreateReportController { /* ... */ }
+
+// ADMIN                       -> allowed (no permission check)
+// USER with CREATE_REPORT     -> allowed
+// USER without CREATE_REPORT  -> 403
+```
+
+It is repeatable with ANY-of semantics. `#[AllowsRole]` is **purely additive — it grants, it never restricts.** A controller carrying *only* `#[AllowsRole]` declares no gate and is therefore effectively open; to *restrict* access to a role, use `#[RequiresRole]` or `#[RequiresRoles]`.
 
 ### Dependency Injection
 
