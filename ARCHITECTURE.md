@@ -13,8 +13,10 @@ src/
 ├── App.php                          # Application bootstrapper and entry point
 ├── Attributes/
 │   ├── Route.php                    # #[Route] attribute for declaring HTTP routes
-│   ├── RequiresRoles.php           # #[RequiresRoles] attribute for RBAC
-│   └── RequiresPermission.php      # #[RequiresPermission] attribute (repeatable, ANY-of)
+│   ├── RequiresRoles.php           # #[RequiresRoles] attribute for RBAC (string[]/enum)
+│   ├── RequiresRole.php            # #[RequiresRole] enum-only, repeatable role gate
+│   ├── RequiresPermission.php      # #[RequiresPermission] attribute (repeatable, ANY-of)
+│   └── AllowsRole.php              # #[AllowsRole] repeatable, additive role bypass
 ├── Authentication/
 │   └── AuthenticatedUserInterface.php  # Contract for authenticated users
 ├── Authorization/
@@ -95,9 +97,11 @@ The central class with two responsibilities:
 
 Extends League Route's `JsonStrategy` to add:
 
-- **Role-based access control** (via `AccessControlEnforcer`) — Reads `#[RequiresRoles]` attributes from the matched controller class. If roles are required, it looks for an `AuthenticatedUserInterface` on the request's `user` attribute (typically set by middleware). Throws `401 Unauthorized` if no user is present, or `403 Forbidden` if the user lacks the required roles.
+- **Role-based access control** (via `AccessControlEnforcer`) — Reads `#[RequiresRoles]` (and the enum-only, repeatable `#[RequiresRole]`) attributes from the matched controller class, combining them into a single OR-list of required roles. If roles are required, it looks for an `AuthenticatedUserInterface` on the request's `user` attribute (typically set by middleware). Throws `401 Unauthorized` if no user is present, or `403 Forbidden` if the user lacks the required roles.
 
 - **Permission-based access control** (via `AccessControlEnforcer`) — Reads repeatable `#[RequiresPermission]` attributes (after role enforcement) and delegates the decision to the app-bound `AuthorizationServiceInterface`, resolved from the container by `App::build()`. Multiple attributes mean ANY-of: the route passes if any one permission is allowed. Throws `403 Forbidden` when all are denied, and a `RuntimeException` when the attribute is present but no service is bound — misconfiguration fails loudly.
+
+- **Additive role bypass** (via `AccessControlEnforcer`) — `#[AllowsRole]` is checked before the gates: a user holding one of the allowed roles passes regardless of the `#[RequiresRole]`/`#[RequiresRoles]` and `#[RequiresPermission]` gates, skipping the permission check (and the `AuthorizationServiceInterface`) entirely. It is purely additive — it never restricts — so a handler carrying only `#[AllowsRole]` declares no gate and is effectively open.
 
 - **Automatic parameter injection** — Inspects the controller's `__invoke` parameters via reflection and injects:
   - `ServerRequestInterface` — the PSR-7 request
@@ -127,7 +131,11 @@ Class name resolution for array element types uses PHP-Parser to read `use` stat
 
 - **`#[RequiresRoles(array $roles)]`** — Declares which roles are required to access a controller. Accepts role-name strings and/or `RoleInterface` enum cases (normalised to strings on construction). The strategy checks the user's roles (via `AuthenticatedUserInterface`) against these before invoking the controller.
 
+- **`#[RequiresRole(RoleInterface $role)]`** — Enum-only, repeatable counterpart to `#[RequiresRoles]`. Each instance contributes one role; instances combine with the `#[RequiresRoles]` list under ANY-of semantics.
+
 - **`#[RequiresPermission(RoleInterface $userKind, PermissionInterface $permission)]`** — Declares that accessing a controller requires a permission, checked through the app's `AuthorizationServiceInterface`. Repeatable with ANY-of semantics.
+
+- **`#[AllowsRole(RoleInterface $role)]`** — Repeatable, additive bypass: a user holding one of these roles is granted access regardless of the controller's role and permission gates. Never restricts on its own.
 
 ### Authentication
 
