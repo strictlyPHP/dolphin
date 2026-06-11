@@ -1,4 +1,5 @@
-Changelog for version 3.4.0
+Changelog for version 3.5.0
 
-- feat: add RequiresRole and AllowsRole attributes (Ken Lalobo)
-- deps(deps): update haydenpierce/class-finder requirement || ^0.6.0 (dependabot[bot])
+- feat: validate routeEnforcers entries in DolphinAppStrategy constructor (Ken Lalobo)
+- feat: add pluggable RouteEnforcerInterface hook (Ken Lalobo)
+- fix(ci): pin symplify/easy-coding-standard to 13.1.5 (Ken Lalobo)
