@@ -32,8 +32,22 @@ class DolphinAppStrategy extends JsonStrategy
         private ?bool $debugMode = false,
         private ?bool $includeRoleCheck = true,
         private ?MiddlewareInterface $throwableHandler = null,
-        ?AuthorizationServiceInterface $authorizationService = null
+        ?AuthorizationServiceInterface $authorizationService = null,
+        /**
+         * @var RouteEnforcerInterface[] $routeEnforcers
+         */
+        private array $routeEnforcers = []
     ) {
+        foreach ($routeEnforcers as $index => $enforcer) {
+            if (! $enforcer instanceof RouteEnforcerInterface) {
+                throw new \InvalidArgumentException(sprintf(
+                    'routeEnforcers[%s] must implement %s',
+                    $index,
+                    RouteEnforcerInterface::class
+                ));
+            }
+        }
+
         parent::__construct($responseFactory, $jsonFlags);
         $this->accessControlEnforcer = new AccessControlEnforcer($authorizationService);
     }
@@ -125,7 +139,11 @@ class DolphinAppStrategy extends JsonStrategy
         }
 
         if ($this->includeRoleCheck) {
-            $request = $this->accessControlEnforcer->enforce($ref, $request);
+            $request = $this->accessControlEnforcer->enforce($ref, $request, $route->getVars());
+        }
+
+        foreach ($this->routeEnforcers as $enforcer) {
+            $request = $enforcer->enforce($ref, $request, $route->getVars());
         }
 
         $parameters = $ref->getParameters();

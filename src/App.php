@@ -25,6 +25,7 @@ use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
 use StrictlyPHP\Dolphin\Request\Method;
 use StrictlyPHP\Dolphin\Strategy\DolphinAppStrategy;
 use StrictlyPHP\Dolphin\Strategy\DtoMapper;
+use StrictlyPHP\Dolphin\Strategy\RouteEnforcerInterface;
 
 class App
 {
@@ -41,6 +42,7 @@ class App
      * @param array<int, string> $controllers
      * @param array<string, mixed> $containerDefinitions
      * @param array<int, class-string> $middlewares
+     * @param RouteEnforcerInterface[] $routeEnforcers
      */
     public static function build(
         array $controllers,
@@ -49,7 +51,8 @@ class App
         ?array $middlewares = [],
         ?bool $includeRoleCheck = true,
         ?MiddlewareInterface $throwableHandler = null,
-        ?\Closure $exceptionHandler = null
+        ?\Closure $exceptionHandler = null,
+        array $routeEnforcers = []
     ): self {
         if (empty($controllers)) {
             throw new \InvalidArgumentException('No controllers provided');
@@ -85,7 +88,8 @@ class App
             debugMode: $debugMode,
             includeRoleCheck: $includeRoleCheck,
             throwableHandler: $throwableHandler,
-            authorizationService: $authorizationService
+            authorizationService: $authorizationService,
+            routeEnforcers: $routeEnforcers
         );
         $strategy->setContainer($container);
         $router = new Router();
