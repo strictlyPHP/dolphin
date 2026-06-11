@@ -38,6 +38,16 @@ class DolphinAppStrategy extends JsonStrategy
          */
         private array $routeEnforcers = []
     ) {
+        foreach ($routeEnforcers as $index => $enforcer) {
+            if (! $enforcer instanceof RouteEnforcerInterface) {
+                throw new \InvalidArgumentException(sprintf(
+                    'routeEnforcers[%s] must implement %s',
+                    $index,
+                    RouteEnforcerInterface::class
+                ));
+            }
+        }
+
         parent::__construct($responseFactory, $jsonFlags);
         $this->accessControlEnforcer = new AccessControlEnforcer($authorizationService);
     }

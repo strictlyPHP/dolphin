@@ -130,6 +130,15 @@ class RouteEnforcerInterfaceTest extends TestCase
         $strategy->invokeRouteCallable($this->createRoute(), $request);
     }
 
+    public function testConstructorRejectsNonEnforcerEntries(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(RouteEnforcerInterface::class);
+
+        // @phpstan-ignore-next-line argument.type — intentionally invalid to assert the guard
+        $this->createStrategy([new \stdClass()]);
+    }
+
     /**
      * @param RouteEnforcerInterface[] $routeEnforcers
      */
