@@ -20,7 +20,7 @@ use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
  * Enforces #[RequiresRoles], #[RequiresRole], #[RequiresPermission] and
  * #[AllowsRole] attributes declared on a matched route handler.
  */
-class AccessControlEnforcer
+class AccessControlEnforcer implements RouteEnforcerInterface
 {
     public function __construct(
         private ?AuthorizationServiceInterface $authorizationService = null
@@ -31,10 +31,14 @@ class AccessControlEnforcer
      * Runs role enforcement first, then permission enforcement. A user holding
      * an #[AllowsRole] role bypasses both gates. Returns the request with the
      * 'required_roles' and 'required_permissions' attributes set.
+     *
+     * @param array<string, string> $vars Unused by the built-in enforcer;
+     *                                    present to satisfy RouteEnforcerInterface.
      */
     public function enforce(
         ReflectionMethod|ReflectionFunction $ref,
-        ServerRequestInterface $request
+        ServerRequestInterface $request,
+        array $vars = []
     ): ServerRequestInterface {
         // #[AllowsRole] is purely additive: a user holding one of the allowed
         // roles passes regardless of the role/permission gates below.

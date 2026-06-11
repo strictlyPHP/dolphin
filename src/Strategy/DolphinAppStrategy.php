@@ -32,7 +32,11 @@ class DolphinAppStrategy extends JsonStrategy
         private ?bool $debugMode = false,
         private ?bool $includeRoleCheck = true,
         private ?MiddlewareInterface $throwableHandler = null,
-        ?AuthorizationServiceInterface $authorizationService = null
+        ?AuthorizationServiceInterface $authorizationService = null,
+        /**
+         * @var RouteEnforcerInterface[] $routeEnforcers
+         */
+        private array $routeEnforcers = []
     ) {
         parent::__construct($responseFactory, $jsonFlags);
         $this->accessControlEnforcer = new AccessControlEnforcer($authorizationService);
@@ -125,7 +129,11 @@ class DolphinAppStrategy extends JsonStrategy
         }
 
         if ($this->includeRoleCheck) {
-            $request = $this->accessControlEnforcer->enforce($ref, $request);
+            $request = $this->accessControlEnforcer->enforce($ref, $request, $route->getVars());
+        }
+
+        foreach ($this->routeEnforcers as $enforcer) {
+            $request = $enforcer->enforce($ref, $request, $route->getVars());
         }
 
         $parameters = $ref->getParameters();
