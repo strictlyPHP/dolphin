@@ -195,6 +195,12 @@ class DolphinAppStrategy extends JsonStrategy
 
         if ($this->isJsonSerializable($response)) {
             $body = SafeJsonEncoder::encode($response, $this->jsonFlags);
+            // '' means a genuinely un-encodable body survived the safe flags; fail
+            // fast so it flows into the hardened throwable handler rather than
+            // emitting a blank 200 that masks the failure.
+            if ($body === '') {
+                throw new \RuntimeException('json_encode failed: ' . json_last_error_msg());
+            }
             $response = $this->responseFactory->createResponse();
             $response->getBody()->write($body);
         }
