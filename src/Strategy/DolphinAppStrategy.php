@@ -18,6 +18,7 @@ use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionNamedType;
 use StrictlyPHP\Dolphin\Authorization\AuthorizationServiceInterface;
+use StrictlyPHP\Dolphin\Json\SafeJsonEncoder;
 use Throwable;
 
 class DolphinAppStrategy extends JsonStrategy
@@ -109,11 +110,21 @@ class DolphinAppStrategy extends JsonStrategy
                         $responseData['exception'] = [
                             'message' => $exception->getMessage(),
                             'request' => (string) $request->getBody(),
-                            'trace' => $exception->getTrace(),
+                            // getTraceAsString() is a plain string; getTrace() returns
+                            // frame arrays containing arbitrary call arguments (objects,
+                            // closures, binary blobs, circular refs) that can make
+                            // json_encode fail and mask this very error.
+                            'trace' => $exception->getTraceAsString(),
                         ];
                     }
 
-                    $response->getBody()->write(json_encode($responseData));
+                    // Guaranteed-string encode plus a hardcoded fallback so a secondary
+                    // encoding failure can never mask the primary, already-logged error.
+                    $body = SafeJsonEncoder::encode($responseData);
+                    if ($body === '') {
+                        $body = '{"statusCode":500,"reasonPhrase":"Internal Server Error"}';
+                    }
+                    $response->getBody()->write($body);
 
                     return $response
                         ->withAddedHeader('content-type', 'application/json')
@@ -183,7 +194,7 @@ class DolphinAppStrategy extends JsonStrategy
         $response = $callable(...$args);
 
         if ($this->isJsonSerializable($response)) {
-            $body = json_encode($response, $this->jsonFlags);
+            $body = SafeJsonEncoder::encode($response, $this->jsonFlags);
             $response = $this->responseFactory->createResponse();
             $response->getBody()->write($body);
         }
@@ -217,7 +228,7 @@ class DolphinAppStrategy extends JsonStrategy
                     );
                 }
 
-                $this->response->getBody()->write(json_encode([
+                $this->response->getBody()->write(SafeJsonEncoder::encode([
                     'statusCode' => $statusCode,
                     'reasonPhrase' => $message,
                 ]));

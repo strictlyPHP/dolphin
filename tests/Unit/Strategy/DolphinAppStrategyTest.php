@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use StrictlyPHP\Dolphin\Authentication\AuthenticatedUserInterface;
@@ -21,6 +22,7 @@ use StrictlyPHP\Dolphin\Response\JsonResponse;
 use StrictlyPHP\Dolphin\Strategy\DolphinAppStrategy;
 use StrictlyPHP\Dolphin\Strategy\DtoMapper;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Authorization\TestPermission;
+use StrictlyPHP\Tests\Dolphin\Fixtures\TestLogger;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestRequiresAnyPermissionController;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestRequiresPermissionController;
 use StrictlyPHP\Tests\Dolphin\Fixtures\TestUserAdmin;
@@ -165,6 +167,133 @@ class DolphinAppStrategyTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('{"response":"ok"}', (string) $response->getBody());
+    }
+
+    public function testSuccessPathDegradesMalformedUtf8InsteadOf500(): void
+    {
+        $controller = new class() {
+            /**
+             * @return array<string, string>
+             */
+            public function __invoke(ServerRequestInterface $request): array
+            {
+                return [
+                    'response' => "bad\xB1byte",
+                ];
+            }
+        };
+
+        $strategy = $this->createStrategy(null);
+        $route = new Route('GET', '/legacy', $controller);
+
+        $response = $strategy->invokeRouteCallable($route, $this->createRequest());
+
+        $this->assertSame(200, $response->getStatusCode());
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame("bad\u{FFFD}byte", $decoded['response']);
+    }
+
+    public function testErrorHandlerNeverMasksRealErrorWithUnencodablePayload(): void
+    {
+        $logger = new TestLogger();
+        $strategy = new DolphinAppStrategy(
+            dtoMapper: new DtoMapper(),
+            responseFactory: new ResponseFactory(),
+            logger: $logger,
+            debugMode: true,
+        );
+
+        // A message containing malformed UTF-8 would make json_encode() return false
+        // on the old code path, producing a write(false) TypeError that masks this
+        // very exception.
+        $realException = new \RuntimeException("missing table \xB1 recruiter_jobs");
+
+        $handler = new class($realException) implements RequestHandlerInterface {
+            public function __construct(
+                private \Throwable $exception
+            ) {
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                throw $this->exception;
+            }
+        };
+
+        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame('application/json', $response->getHeaderLine('content-type'));
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame(500, $decoded['statusCode']);
+        // The real, logged error survives into the response (bad byte substituted).
+        $this->assertStringContainsString('missing table', $decoded['exception']['message']);
+        $this->assertStringContainsString('recruiter_jobs', $decoded['exception']['message']);
+        // The trace is a plain string, not an array of frame args.
+        $this->assertIsString($decoded['exception']['trace']);
+
+        $this->assertSame('critical', $logger->getLogs()[0]['level']);
+    }
+
+    public function testErrorHandlerEncodesTraceThroughClosureAsString(): void
+    {
+        $strategy = new DolphinAppStrategy(
+            dtoMapper: new DtoMapper(),
+            responseFactory: new ResponseFactory(),
+            debugMode: true,
+        );
+
+        // Build an exception whose stack trace passes an object and a closure as
+        // call arguments — getTrace() frame args that are not json-encodable.
+        $handler = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $thrower = static function (object $obj, \Closure $fn): void {
+                    throw new \RuntimeException('boom through closure');
+                };
+
+                $thrower(new \stdClass(), static fn (): bool => true);
+            }
+        };
+
+        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+
+        $this->assertSame(500, $response->getStatusCode());
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame('boom through closure', $decoded['exception']['message']);
+        $this->assertIsString($decoded['exception']['trace']);
+    }
+
+    public function testNonDebugErrorHandlerReturnsCleanJsonWithoutTrace(): void
+    {
+        $strategy = new DolphinAppStrategy(
+            dtoMapper: new DtoMapper(),
+            responseFactory: new ResponseFactory(),
+            debugMode: false,
+        );
+
+        $handler = new class() implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                throw new \RuntimeException('something broke');
+            }
+        };
+
+        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+
+        $this->assertSame(500, $response->getStatusCode());
+
+        $decoded = json_decode((string) $response->getBody(), true);
+        $this->assertSame([
+            'statusCode' => 500,
+            'reasonPhrase' => 'Internal Server Error',
+        ], $decoded);
     }
 
     private function createStrategy(?AuthorizationServiceInterface $authorizationService): DolphinAppStrategy
