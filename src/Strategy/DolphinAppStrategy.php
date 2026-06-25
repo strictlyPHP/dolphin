@@ -122,7 +122,11 @@ class DolphinAppStrategy extends JsonStrategy
                     // encoding failure can never mask the primary, already-logged error.
                     $body = SafeJsonEncoder::encode($responseData);
                     if ($body === '') {
+                        // Unreachable in practice (the safe flags never yield ''); kept as
+                        // a last-resort guarantee that the handler itself cannot throw.
+                        // @codeCoverageIgnoreStart
                         $body = '{"statusCode":500,"reasonPhrase":"Internal Server Error"}';
+                        // @codeCoverageIgnoreEnd
                     }
                     $response->getBody()->write($body);
 
@@ -197,9 +201,11 @@ class DolphinAppStrategy extends JsonStrategy
             $body = SafeJsonEncoder::encode($response, $this->jsonFlags);
             // '' means a genuinely un-encodable body survived the safe flags; fail
             // fast so it flows into the hardened throwable handler rather than
-            // emitting a blank 200 that masks the failure.
+            // emitting a blank 200 that masks the failure. Unreachable in practice.
             if ($body === '') {
+                // @codeCoverageIgnoreStart
                 throw new \RuntimeException('json_encode failed: ' . json_last_error_msg());
+                // @codeCoverageIgnoreEnd
             }
             $response = $this->responseFactory->createResponse();
             $response->getBody()->write($body);
