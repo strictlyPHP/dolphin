@@ -9,13 +9,31 @@ use StrictlyPHP\Dolphin\Response\JsonResponse;
 
 class JsonResponseTest extends TestCase
 {
-    public function testItThrowsExceptionWhenJsonEncodeFails(): void
+    public function testItEncodesValidBody(): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('json_encode failed:');
+        $response = new JsonResponse([
+            'response' => 'ok',
+        ]);
 
-        new JsonResponse([
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('{"response":"ok"}', (string) $response->getBody());
+        $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    public function testItDegradesMalformedUtf8InsteadOfThrowing(): void
+    {
+        $response = new JsonResponse([
             'invalid' => "\xB1\x31",
         ]);
+
+        $this->assertSame(200, $response->getStatusCode());
+
+        $body = (string) $response->getBody();
+        // The malformed byte is substituted with the Unicode replacement character
+        // and the response is still valid JSON, rather than a hard failure.
+        $this->assertIsArray(json_decode($body, true));
+        $this->assertSame([
+            'invalid' => "\u{FFFD}1",
+        ], json_decode($body, true));
     }
 }
