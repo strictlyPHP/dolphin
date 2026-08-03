@@ -1,5 +1,8 @@
-Changelog for version 3.5.0
+Changelog for version 3.5.1
 
-- feat: validate routeEnforcers entries in DolphinAppStrategy constructor (Ken Lalobo)
-- feat: add pluggable RouteEnforcerInterface hook (Ken Lalobo)
-- fix(ci): pin symplify/easy-coding-standard to 13.1.5 (Ken Lalobo)
+- deps(deps-dev): update symplify/easy-coding-standard requirement (dependabot[bot])
+- style: satisfy ECS 13.2 fixer rules (Ken Lalobo)
+- test: exclude unreachable encoder-failure guards from coverage (Ken Lalobo)
+- fix: fail fast on un-encodable route response instead of blank 200 (Ken Lalobo)
+- fix: harden JSON encoding so it never masks the real error (Ken Lalobo)
+- chore(deps): bump actions/checkout from 6 to 7 (dependabot[bot])
