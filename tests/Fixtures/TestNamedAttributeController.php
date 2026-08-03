@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace StrictlyPHP\Tests\Dolphin\Fixtures;
 
 use League\Route\Http\Exception\UnauthorizedException;

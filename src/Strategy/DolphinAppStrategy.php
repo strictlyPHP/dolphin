@@ -35,7 +35,7 @@ class DolphinAppStrategy extends JsonStrategy
         private ?MiddlewareInterface $throwableHandler = null,
         ?AuthorizationServiceInterface $authorizationService = null,
         /**
-         * @var RouteEnforcerInterface[] $routeEnforcers
+         * @var RouteEnforcerInterface[]
          */
         private array $routeEnforcers = []
     ) {
@@ -128,7 +128,8 @@ class DolphinAppStrategy extends JsonStrategy
                         $body = '{"statusCode":500,"reasonPhrase":"Internal Server Error"}';
                         // @codeCoverageIgnoreEnd
                     }
-                    $response->getBody()->write($body);
+                    $response->getBody()
+                        ->write($body);
 
                     return $response
                         ->withAddedHeader('content-type', 'application/json')
@@ -183,7 +184,8 @@ class DolphinAppStrategy extends JsonStrategy
             }
 
             if (class_exists($typeName)) {
-                $body = $request->getBody()->getContents();
+                $body = $request->getBody()
+                    ->getContents();
                 $data = json_decode($body, true);
 
                 if (! is_array($data)) {
@@ -208,7 +210,8 @@ class DolphinAppStrategy extends JsonStrategy
                 // @codeCoverageIgnoreEnd
             }
             $response = $this->responseFactory->createResponse();
-            $response->getBody()->write($body);
+            $response->getBody()
+                ->write($body);
         }
 
         return $this->decorateResponse($response);
@@ -240,10 +243,11 @@ class DolphinAppStrategy extends JsonStrategy
                     );
                 }
 
-                $this->response->getBody()->write(SafeJsonEncoder::encode([
-                    'statusCode' => $statusCode,
-                    'reasonPhrase' => $message,
-                ]));
+                $this->response->getBody()
+                    ->write(SafeJsonEncoder::encode([
+                        'statusCode' => $statusCode,
+                        'reasonPhrase' => $message,
+                    ]));
 
                 $response = $this->response->withAddedHeader('content-type', 'application/json');
                 return $response->withStatus($statusCode);

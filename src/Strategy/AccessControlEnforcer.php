@@ -93,7 +93,8 @@ class AccessControlEnforcer implements RouteEnforcerInterface
 
         // Class-level attributes (function handlers have no declaring class)
         if ($ref instanceof ReflectionMethod) {
-            $permissionAttrs = $ref->getDeclaringClass()->getAttributes(RequiresPermission::class);
+            $permissionAttrs = $ref->getDeclaringClass()
+                ->getAttributes(RequiresPermission::class);
             foreach ($permissionAttrs as $permissionAttr) {
                 $requiredPermissions[] = $permissionAttr->newInstance();
             }

@@ -41,7 +41,8 @@ class AccessControlEnforcerTest extends TestCase
     public function testItSetsRequiredPermissionsAttributeOnTheRequest(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $enforcer = new AccessControlEnforcer($authorizationService);
         $ref = new ReflectionMethod(TestRequiresPermissionController::class, '__invoke');
@@ -61,7 +62,8 @@ class AccessControlEnforcerTest extends TestCase
     public function testItSetsAllRepeatedPermissionsOnTheRequest(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $enforcer = new AccessControlEnforcer($authorizationService);
         $ref = new ReflectionMethod(TestRequiresAnyPermissionController::class, '__invoke');
@@ -131,7 +133,8 @@ class AccessControlEnforcerTest extends TestCase
     public function testAllowsRoleBypassesPermissionGateWithoutCallingService(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(false);
+        $authorizationService->method('isAllowed')
+            ->willReturn(false);
 
         $enforcer = new AccessControlEnforcer($authorizationService);
         $ref = new ReflectionMethod(TestAllowsRolePermissionController::class, '__invoke');
@@ -158,7 +161,8 @@ class AccessControlEnforcerTest extends TestCase
     public function testPermissionGateStillEnforcedForUsersWithoutTheAllowedRole(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $enforcer = new AccessControlEnforcer($authorizationService);
         $ref = new ReflectionMethod(TestAllowsRolePermissionController::class, '__invoke');
@@ -173,7 +177,8 @@ class AccessControlEnforcerTest extends TestCase
     public function testPermissionGateDeniesUserWithoutAllowedRoleOrPermission(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(false);
+        $authorizationService->method('isAllowed')
+            ->willReturn(false);
 
         $enforcer = new AccessControlEnforcer($authorizationService);
         $ref = new ReflectionMethod(TestAllowsRolePermissionController::class, '__invoke');

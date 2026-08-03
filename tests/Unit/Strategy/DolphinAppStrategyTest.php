@@ -58,7 +58,8 @@ class DolphinAppStrategyTest extends TestCase
     public function testRequiresPermissionAllowsWhenAuthorizationServiceAllows(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $strategy = $this->createStrategy($authorizationService);
         $route = new Route('POST', '/permission', new TestRequiresPermissionController());
@@ -72,7 +73,8 @@ class DolphinAppStrategyTest extends TestCase
     public function testRequiresPermissionThrows403WhenAuthorizationServiceDenies(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(false);
+        $authorizationService->method('isAllowed')
+            ->willReturn(false);
 
         $strategy = $this->createStrategy($authorizationService);
         $route = new Route('POST', '/permission', new TestRequiresPermissionController());
@@ -84,13 +86,14 @@ class DolphinAppStrategyTest extends TestCase
     public function testRepeatedRequiresPermissionAllowsWhenAnyPermissionAllows(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturnCallback(
-            static fn (
-                AuthenticatedUserInterface $user,
-                RoleInterface $userKind,
-                PermissionInterface $permission
-            ): bool => $permission === TestPermission::CREATE_USER
-        );
+        $authorizationService->method('isAllowed')
+            ->willReturnCallback(
+                static fn (
+                    AuthenticatedUserInterface $user,
+                    RoleInterface $userKind,
+                    PermissionInterface $permission
+                ): bool => $permission === TestPermission::CREATE_USER
+            );
 
         $strategy = $this->createStrategy($authorizationService);
         // Declares DELETE_USER (denied) and CREATE_USER (allowed) — ANY-of passes
@@ -104,7 +107,8 @@ class DolphinAppStrategyTest extends TestCase
     public function testRepeatedRequiresPermissionThrows403WhenAllPermissionsDeny(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(false);
+        $authorizationService->method('isAllowed')
+            ->willReturn(false);
 
         $strategy = $this->createStrategy($authorizationService);
         $route = new Route('POST', '/any-permission', new TestRequiresAnyPermissionController());
@@ -126,7 +130,8 @@ class DolphinAppStrategyTest extends TestCase
     public function testRequiresPermissionThrows401WhenNoUserOnRequest(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $strategy = $this->createStrategy($authorizationService);
         $route = new Route('POST', '/permission', new TestRequiresPermissionController());
@@ -138,11 +143,13 @@ class DolphinAppStrategyTest extends TestCase
     public function testRequiresPermissionThrowsRuntimeExceptionWhenUserIsWrongType(): void
     {
         $authorizationService = $this->createStub(AuthorizationServiceInterface::class);
-        $authorizationService->method('isAllowed')->willReturn(true);
+        $authorizationService->method('isAllowed')
+            ->willReturn(true);
 
         $strategy = $this->createStrategy($authorizationService);
         $route = new Route('POST', '/permission', new TestRequiresPermissionController());
-        $request = $this->createRequest()->withAttribute('user', new \stdClass());
+        $request = $this->createRequest()
+            ->withAttribute('user', new \stdClass());
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage(AuthenticatedUserInterface::class);
@@ -222,7 +229,8 @@ class DolphinAppStrategyTest extends TestCase
             }
         };
 
-        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+        $response = $strategy->getThrowableHandler()
+            ->process($this->createRequest(), $handler);
 
         $this->assertSame(500, $response->getStatusCode());
         $this->assertSame('application/json', $response->getHeaderLine('content-type'));
@@ -260,7 +268,8 @@ class DolphinAppStrategyTest extends TestCase
             }
         };
 
-        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+        $response = $strategy->getThrowableHandler()
+            ->process($this->createRequest(), $handler);
 
         $this->assertSame(500, $response->getStatusCode());
 
@@ -285,7 +294,8 @@ class DolphinAppStrategyTest extends TestCase
             }
         };
 
-        $response = $strategy->getThrowableHandler()->process($this->createRequest(), $handler);
+        $response = $strategy->getThrowableHandler()
+            ->process($this->createRequest(), $handler);
 
         $this->assertSame(500, $response->getStatusCode());
 
@@ -312,6 +322,7 @@ class DolphinAppStrategyTest extends TestCase
 
     private function createAuthenticatedRequest(): ServerRequestInterface
     {
-        return $this->createRequest()->withAttribute('user', new TestUserAdmin());
+        return $this->createRequest()
+            ->withAttribute('user', new TestUserAdmin());
     }
 }

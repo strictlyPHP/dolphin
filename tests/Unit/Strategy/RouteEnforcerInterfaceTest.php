@@ -36,20 +36,21 @@ class RouteEnforcerInterfaceTest extends TestCase
         $captured = [];
 
         $enforcer = $this->createStub(RouteEnforcerInterface::class);
-        $enforcer->method('enforce')->willReturnCallback(
-            static function (
-                ReflectionMethod|ReflectionFunction $ref,
-                ServerRequestInterface $request,
-                array $vars
-            ) use (&$captured): ServerRequestInterface {
-                $captured = [
-                    'ref' => $ref,
-                    'vars' => $vars,
-                ];
+        $enforcer->method('enforce')
+            ->willReturnCallback(
+                static function (
+                    ReflectionMethod|ReflectionFunction $ref,
+                    ServerRequestInterface $request,
+                    array $vars
+                ) use (&$captured): ServerRequestInterface {
+                    $captured = [
+                        'ref' => $ref,
+                        'vars' => $vars,
+                    ];
 
-                return $request;
-            }
-        );
+                    return $request;
+                }
+            );
 
         $strategy = $this->createStrategy([$enforcer]);
         $route = $this->createRoute();
@@ -81,10 +82,12 @@ class RouteEnforcerInterfaceTest extends TestCase
         };
 
         $enforcerA = $this->createStub(RouteEnforcerInterface::class);
-        $enforcerA->method('enforce')->willReturnCallback($append('a'));
+        $enforcerA->method('enforce')
+            ->willReturnCallback($append('a'));
 
         $enforcerB = $this->createStub(RouteEnforcerInterface::class);
-        $enforcerB->method('enforce')->willReturnCallback($append('b'));
+        $enforcerB->method('enforce')
+            ->willReturnCallback($append('b'));
 
         $strategy = $this->createStrategy([$enforcerA, $enforcerB]);
 
@@ -96,14 +99,16 @@ class RouteEnforcerInterfaceTest extends TestCase
     public function testThrowingEnforcerHaltsChainBeforeSubsequentEnforcersAndController(): void
     {
         $thrower = $this->createStub(RouteEnforcerInterface::class);
-        $thrower->method('enforce')->willThrowException(new ForbiddenException('Policy violation'));
+        $thrower->method('enforce')
+            ->willThrowException(new ForbiddenException('Policy violation'));
 
         $shouldNotRun = $this->createStub(RouteEnforcerInterface::class);
-        $shouldNotRun->method('enforce')->willReturnCallback(
-            function (): ServerRequestInterface {
-                $this->fail('Enforcer after a throwing enforcer must not run');
-            }
-        );
+        $shouldNotRun->method('enforce')
+            ->willReturnCallback(
+                function (): ServerRequestInterface {
+                    $this->fail('Enforcer after a throwing enforcer must not run');
+                }
+            );
 
         $strategy = $this->createStrategy([$thrower, $shouldNotRun]);
 
@@ -116,15 +121,17 @@ class RouteEnforcerInterfaceTest extends TestCase
         // The user lacks the required USER role, so AccessControlEnforcer must
         // reject before the custom enforcer is ever consulted.
         $shouldNotRun = $this->createStub(RouteEnforcerInterface::class);
-        $shouldNotRun->method('enforce')->willReturnCallback(
-            function (): ServerRequestInterface {
-                $this->fail('Custom enforcer must not run when the role gate fails');
-            }
-        );
+        $shouldNotRun->method('enforce')
+            ->willReturnCallback(
+                function (): ServerRequestInterface {
+                    $this->fail('Custom enforcer must not run when the role gate fails');
+                }
+            );
 
         $strategy = $this->createStrategy([$shouldNotRun]);
         // TestUserAdmin holds ['ADMIN'] — no intersection with the required ['USER'].
-        $request = $this->createRequest()->withAttribute('user', new TestUserAdmin());
+        $request = $this->createRequest()
+            ->withAttribute('user', new TestUserAdmin());
 
         $this->expectException(ForbiddenException::class);
         $strategy->invokeRouteCallable($this->createRoute(), $request);
@@ -163,6 +170,7 @@ class RouteEnforcerInterfaceTest extends TestCase
 
     private function createAuthenticatedRequest(): ServerRequestInterface
     {
-        return $this->createRequest()->withAttribute('user', new TestUserRegular());
+        return $this->createRequest()
+            ->withAttribute('user', new TestUserRegular());
     }
 }

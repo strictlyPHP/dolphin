@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace StrictlyPHP\Dolphin\Response;
 
 use Fig\Http\Message\StatusCodeInterface;
