@@ -102,7 +102,8 @@ class DtoMapper
 
     private function resolveArrayDocblockType(ReflectionParameter $param): string
     {
-        $rawDoc = $param->getDeclaringFunction()->getDocComment() ?: '';
+        $rawDoc = $param->getDeclaringFunction()
+            ->getDocComment() ?: '';
         $paramName = $param->getName();
 
         // collapse whitespace
@@ -135,7 +136,8 @@ class DtoMapper
 
     private function resolveClassNameFromImports(ReflectionParameter $param, string $shortName): string
     {
-        $dtoClass = $param->getDeclaringClass()->getName();
+        $dtoClass = $param->getDeclaringClass()
+            ->getName();
         $importMap = $this->getImportMapForDto($dtoClass);
 
         // If the short name matches an import alias, return that
@@ -144,7 +146,8 @@ class DtoMapper
         }
 
         // Otherwise fallback to namespace of the DTO
-        $dtoNamespace = $param->getDeclaringClass()->getNamespaceName();
+        $dtoNamespace = $param->getDeclaringClass()
+            ->getNamespaceName();
         $candidate = $dtoNamespace . '\\' . $shortName;
 
         if (class_exists($candidate)) {
@@ -229,7 +232,8 @@ class DtoMapper
 
     private function arrayAllowsNullElements(ReflectionParameter $param): bool
     {
-        $doc = $param->getDeclaringFunction()->getDocComment() ?: '';
+        $doc = $param->getDeclaringFunction()
+            ->getDocComment() ?: '';
         return preg_match('/array<\w+,\s*\?/', $doc) === 1;
     }
 
@@ -360,7 +364,7 @@ class DtoMapper
                 if (class_exists($className)) {
                     try {
                         return (new ReflectionClass($className))->newInstanceArgs([$raw]);
-                    } catch (\ReflectionException | \TypeError | \ArgumentCountError) {
+                    } catch (\ReflectionException|\TypeError|\ArgumentCountError) {
                         continue;
                     }
                 }
