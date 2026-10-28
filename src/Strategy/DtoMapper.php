@@ -259,16 +259,19 @@ class DtoMapper
     }
 
     /**
+     * Each element keeps its key, so an array keyed by name (`array<string, T>`)
+     * stays keyed; a list stays a list.
+     *
      * @param array<mixed> $values
      * @return array<mixed>
      */
     private function mapArrayOfType(string $elementClass, array $values, bool $nullableElements): array
     {
         $out = [];
-        foreach ($values as $val) {
+        foreach ($values as $key => $val) {
             if ($val === null) {
                 if ($nullableElements) {
-                    $out[] = null;
+                    $out[$key] = null;
                     continue;
                 }
                 throw new DtoMapperException("Null array element not allowed for $elementClass");
@@ -276,19 +279,19 @@ class DtoMapper
 
             // scalar types
             if (in_array($elementClass, ['string', 'int', 'float', 'bool'], true)) {
-                $out[] = $val;
+                $out[$key] = $val;
                 continue;
             }
 
             // already object of correct type
             if (is_object($val) && $val instanceof $elementClass) {
-                $out[] = $val;
+                $out[$key] = $val;
                 continue;
             }
 
             // array → recursively map DTO
             if (is_array($val)) {
-                $out[] = $this->map($elementClass, $val);
+                $out[$key] = $this->map($elementClass, $val);
                 continue;
             }
 
@@ -297,10 +300,10 @@ class DtoMapper
 
             // Handle enums
             if ($ref->isEnum()) {
-                $out[] = $this->newEnum($elementClass, $val);
+                $out[$key] = $this->newEnum($elementClass, $val);
             } else {
                 // Non-enum single-value constructor objects
-                $out[] = $ref->newInstanceArgs([$val]);
+                $out[$key] = $ref->newInstanceArgs([$val]);
             }
         }
         return $out;
