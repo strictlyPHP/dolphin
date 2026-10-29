@@ -1,8 +1,4 @@
-Changelog for version 3.5.1
+Changelog for version 3.6.0
 
+- fix: keep the keys of typed arrays mapped from a request (Ken Lalobo)
 - deps(deps-dev): update symplify/easy-coding-standard requirement (dependabot[bot])
-- style: satisfy ECS 13.2 fixer rules (Ken Lalobo)
-- test: exclude unreachable encoder-failure guards from coverage (Ken Lalobo)
-- fix: fail fast on un-encodable route response instead of blank 200 (Ken Lalobo)
-- fix: harden JSON encoding so it never masks the real error (Ken Lalobo)
-- chore(deps): bump actions/checkout from 6 to 7 (dependabot[bot])
