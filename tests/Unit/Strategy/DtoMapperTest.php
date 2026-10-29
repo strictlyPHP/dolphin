@@ -13,6 +13,7 @@ use StrictlyPHP\Tests\Dolphin\Fixtures\Enum\Status;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\RequestId;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestArrayRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestEnumRequestDto;
+use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestKeyedArrayRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestNullableRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestDto;
 use StrictlyPHP\Tests\Dolphin\Fixtures\Request\TestRequestSameNamespaceDto;
@@ -148,6 +149,51 @@ class DtoMapperTest extends TestCase
         );
 
         $this->assertEquals(new RequestId('1a13aefe-8d58-407c-9ade-b44c897ccc42'), $dto->requestId);
+    }
+
+    public function testTypedArraysKeepTheirKeys(): void
+    {
+        $dto = $this->dtoMapper->map(
+            TestKeyedArrayRequestDto::class,
+            [
+                'labels' => [
+                    'card_payments' => 'active',
+                    'bacs_debit_payments' => 'pending',
+                ],
+                'statuses' => [
+                    'primary' => 'ACTIVE',
+                    'backup' => 'INACTIVE',
+                    'retired' => null,
+                ],
+                'emails' => [
+                    'billing' => 'billing@example.com',
+                    'support' => new EmailAddress('support@example.com'),
+                ],
+                'people' => [
+                    'owner' => [
+                        'givenName' => 'John',
+                        'familyName' => 'Doe',
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertSame([
+            'card_payments' => 'active',
+            'bacs_debit_payments' => 'pending',
+        ], $dto->labels);
+        $this->assertSame([
+            'primary' => Status::ACTIVE,
+            'backup' => Status::INACTIVE,
+            'retired' => null,
+        ], $dto->statuses);
+        $this->assertEquals([
+            'billing' => new EmailAddress('billing@example.com'),
+            'support' => new EmailAddress('support@example.com'),
+        ], $dto->emails);
+        $this->assertEquals([
+            'owner' => new PersonName('John', 'Doe'),
+        ], $dto->people);
     }
 
     public function testArrayWithEmptyValues(): void
